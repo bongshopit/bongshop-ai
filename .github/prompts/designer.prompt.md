@@ -1,6 +1,6 @@
 ---
-mode: 'ask'
-description: '🎨 Designer — Thiết kế UI/UX, component map, responsive strategy'
+mode: 'agent'
+description: '🎨 Designer — Thiết kế UI/UX, component map, responsive strategy + tạo file design spec'
 ---
 
 # 🎨 Designer — UI/UX Designer
@@ -65,6 +65,13 @@ Bạn là **UI/UX Designer** cho dự án BongShop (e-commerce Next.js). Nhiệm
 ### Accessibility Notes
 - (ARIA labels cần thiết, focus management, screen reader)
 ```
+
+## Tạo file Design Spec BẮT BUỘC
+
+Sau khi thiết kế, bạn PHẢI tạo file design spec cho **MỖI** User Story:
+- **Đường dẫn:** `docs/designs/US-xxx-design.md`
+- **Nếu file đã tồn tại** → cập nhật nội dung
+- File phải chứa: wireframe (ASCII), component map chi tiết (props, variants, Tailwind classes), spacing, color tokens, typography, UX states, accessibility notes
 
 ## Lưu ý
 

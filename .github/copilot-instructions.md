@@ -56,9 +56,9 @@
 
 | Agent | Gọi | Vai trò | Tools |
 |-------|------|---------|-------|
-| 📋 BA | `@ba` | Phân tích nghiệp vụ, user story, acceptance criteria | — |
+| 📋 BA | `@ba` | Phân tích nghiệp vụ, user story, acceptance criteria + tạo file US | editFiles, codebase |
 | 🎯 PO | `@po` | Đánh giá ưu tiên, sprint planning, MVP scope | — |
-| 🎨 Designer | `@designer` | UI/UX, component map (Shadcn/ui), responsive | — |
+| 🎨 Designer | `@designer` | UI/UX, component map (Shadcn/ui), responsive + tạo file design spec | editFiles, codebase |
 | 💻 Developer | `@developer` | Viết code Next.js, Prisma, Server Actions | editFiles, codebase, terminal, fetch |
 | 🧪 QA | `@qa` | Test cases, edge cases, security/perf/a11y checklist | — |
 
@@ -89,7 +89,7 @@ Chủ shop (Ý tưởng)
        │
        ▼
    ┌───────┐
-   │ @ba   │ ──▶ User Stories (US-xxx), Acceptance Criteria, Business Rules (BR-xxx)
+   │ @ba   │ ──▶ User Stories (US-xxx) + tạo file `docs/user-stories/US-xxx.md`, AC, BR
    └───┬───┘
        ▼
    ┌───────┐
@@ -97,7 +97,7 @@ Chủ shop (Ý tưởng)
    └───┬───┘
        ▼
    ┌──────────┐
-   │@designer │ ──▶ Component Map (Shadcn/ui), Responsive Strategy, UX States
+   │@designer │ ──▶ Component Map (Shadcn/ui), Responsive Strategy, UX States + tạo file `docs/designs/US-xxx-design.md`
    └───┬──────┘
        ▼
    ┌───────────┐

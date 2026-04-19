@@ -19,6 +19,7 @@ Next.js 14+ (App Router), TypeScript strict, Tailwind CSS + Shadcn/ui, Prisma + 
 - User Stories `US-xxx` với Acceptance Criteria
 - Business Rules `BR-xxx`, Happy Path, Exception Flow
 - Câu hỏi làm rõ (nếu có)
+- **Tạo file** `docs/user-stories/US-xxx.md` cho MỖI User Story để track tiến độ
 
 ## Bước 2: 🎯 PO — Đánh giá & Lập kế hoạch
 - Priority Matrix (MoSCoW) cho mỗi US
@@ -32,6 +33,7 @@ Next.js 14+ (App Router), TypeScript strict, Tailwind CSS + Shadcn/ui, Prisma + 
 - UX States (loading, empty, error, success)
 - Wireframe, Accessibility notes
 - Tham chiếu `TASK-xxx` từ PO
+- **Tạo file** `docs/designs/US-xxx-design.md` cho MỖI User Story với design spec chi tiết
 
 ## Bước 4: 💻 Developer — Implementation
 - File structure theo App Router convention
