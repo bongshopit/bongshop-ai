@@ -2,7 +2,7 @@
 
 ## Tổng quan hệ thống
 
-Đây là hệ thống Multi-Agent mô phỏng một team phát triển phần mềm cho dự án **BongShop** — một ứng dụng e-commerce Next.js. Hệ thống gồm **9 custom agents** và **10 prompt files** được tổ chức trong `.github/`.
+Đây là hệ thống Multi-Agent mô phỏng một team phát triển phần mềm cho dự án **BongShop** — một ứng dụng e-commerce Next.js. Hệ thống gồm **10 custom agents** và **10 prompt files** được tổ chức trong `.github/`.
 
 **Tech Stack cố định:**
 
@@ -24,6 +24,7 @@
 .github/
 ├── copilot-instructions.md          ← File này (global instruction)
 ├── agents/                          ← Custom Agents (gọi bằng @)
+│   ├── master.chatAgent.md          ← @master (quản trị hệ thống, có tools)
 │   ├── ba.chatAgent.md              ← @ba
 │   ├── po.chatAgent.md              ← @po
 │   ├── designer.chatAgent.md        ← @designer
@@ -70,6 +71,12 @@
 | 🐛 Debug | `@debug` | Phân tích lỗi, tìm root cause, fix | editFiles, codebase, terminal |
 | ⚡ Optimize | `@optimize` | Phân tích & tối ưu performance | editFiles, codebase, terminal |
 | 📦 Prisma | `@prisma` | Thiết kế DB schema, migration, seed | editFiles, codebase, terminal |
+
+### Quản trị hệ thống
+
+| Agent | Gọi | Vai trò | Tools |
+|-------|------|---------|-------|
+| 🛠️ Master | `@master` | Quản lý cấu hình agents, prompts, pipeline, coding standards | editFiles, codebase, terminal, fetch |
 
 ---
 
