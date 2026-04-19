@@ -1,6 +1,7 @@
 ---
 name: po
 description: '🎯 Product Owner — Đánh giá ưu tiên, lập kế hoạch sprint, xác định MVP cho BongShop'
+tools: ['editFiles', 'codebase']
 ---
 
 # Vai trò

@@ -25,13 +25,13 @@
 ├── copilot-instructions.md          ← File này (global instruction)
 ├── agents/                          ← Custom Agents (gọi bằng @)
 │   ├── master.chatAgent.md          ← @master (quản trị hệ thống, có tools)
-│   ├── ba.chatAgent.md              ← @ba
-│   ├── po.chatAgent.md              ← @po
-│   ├── designer.chatAgent.md        ← @designer
+│   ├── ba.chatAgent.md              ← @ba (có tools)
+│   ├── po.chatAgent.md              ← @po (có tools)
+│   ├── designer.chatAgent.md        ← @designer (có tools)
 │   ├── developer.chatAgent.md       ← @developer (có tools)
-│   ├── qa.chatAgent.md              ← @qa
+│   ├── qa.chatAgent.md              ← @qa (có tools)
 │   ├── team.chatAgent.md            ← @team (full pipeline, có tools)
-│   ├── reviewer.chatAgent.md        ← @reviewer
+│   ├── reviewer.chatAgent.md        ← @reviewer (có tools)
 │   ├── debug.chatAgent.md           ← @debug (có tools)
 │   ├── optimize.chatAgent.md        ← @optimize (có tools)
 │   └── prisma.chatAgent.md          ← @prisma (có tools)
@@ -57,17 +57,17 @@
 | Agent | Gọi | Vai trò | Tools |
 |-------|------|---------|-------|
 | 📋 BA | `@ba` | Phân tích nghiệp vụ, user story, acceptance criteria + tạo file US | editFiles, codebase |
-| 🎯 PO | `@po` | Đánh giá ưu tiên, sprint planning, MVP scope | — |
+| 🎯 PO | `@po` | Đánh giá ưu tiên, sprint planning, MVP scope | editFiles, codebase |
 | 🎨 Designer | `@designer` | UI/UX, component map (Shadcn/ui), responsive + tạo file design spec | editFiles, codebase |
 | 💻 Developer | `@developer` | Viết code Next.js, Prisma, Server Actions | editFiles, codebase, terminal, fetch |
-| 🧪 QA | `@qa` | Test cases, edge cases, security/perf/a11y checklist | — |
+| 🧪 QA | `@qa` | Test cases, edge cases, security/perf/a11y checklist + viết & chạy Playwright tests | editFiles, codebase, terminal |
 
 ### Agent tiện ích
 
 | Agent | Gọi | Vai trò | Tools |
 |-------|------|---------|-------|
 | 🚀 Full Team | `@team` | Chạy pipeline đầy đủ 5 bước | editFiles, codebase, terminal, fetch |
-| 🔍 Reviewer | `@reviewer` | Code review theo best practices | codebase |
+| 🔍 Reviewer | `@reviewer` | Code review theo best practices | editFiles, codebase |
 | 🐛 Debug | `@debug` | Phân tích lỗi, tìm root cause, fix | editFiles, codebase, terminal |
 | ⚡ Optimize | `@optimize` | Phân tích & tối ưu performance | editFiles, codebase, terminal |
 | 📦 Prisma | `@prisma` | Thiết kế DB schema, migration, seed | editFiles, codebase, terminal |
@@ -105,7 +105,7 @@ Chủ shop (Ý tưởng)
    └───┬───────┘
        ▼
    ┌───────┐
-   │ @qa   │ ──▶ Test Cases (TC-xxx), Edge Cases (EC-xxx), Checklists
+   │ @qa   │ ──▶ Test Cases (TC-xxx), Edge Cases (EC-xxx), Checklists + Playwright Tests (e2e/*.spec.ts) — chạy & đảm bảo PASSED
    └───────┘
 ```
 

@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: '🔍 Code Reviewer — Review code theo best practices Next.js, TypeScript, security'
-tools: ['codebase']
+tools: ['editFiles', 'codebase']
 ---
 
 # Vai trò
