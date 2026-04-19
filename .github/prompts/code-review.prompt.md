@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: '🔍 Code Review — Review code theo best practices BongShop'
+tools: ['editFiles', 'codebase', 'terminal']
 ---
 
 # 🔍 Code Review Agent

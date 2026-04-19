@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: '📦 Prisma Schema — Thiết kế database schema cho BongShop'
+tools: ['editFiles', 'codebase', 'terminal']
 ---
 
 # 📦 Prisma Schema Agent

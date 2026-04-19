@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: '⚡ Optimize — Phân tích và tối ưu performance Next.js'
+tools: ['editFiles', 'codebase', 'terminal']
 ---
 
 # ⚡ Performance Optimization Agent

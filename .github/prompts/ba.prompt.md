@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: '📋 BA — Phân tích nghiệp vụ, user story, acceptance criteria + tạo file US'
+tools: ['editFiles', 'codebase']
 ---
 
 # 📋 BA — Business Analyst

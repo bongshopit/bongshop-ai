@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: '🧪 QA — Test cases, edge cases, security/performance/a11y checklist, viết & chạy Playwright tests'
+tools: ['editFiles', 'codebase', 'terminal']
 ---
 
 # 🧪 QA — Quality Assurance

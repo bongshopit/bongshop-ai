@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: '🐛 Debug — Phân tích lỗi, tìm root cause, đề xuất fix'
+tools: ['editFiles', 'codebase', 'terminal']
 ---
 
 # 🐛 Debug Agent

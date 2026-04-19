@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: '🎯 PO — Đánh giá ưu tiên, lập kế hoạch sprint, xác định MVP'
+tools: ['editFiles', 'codebase']
 ---
 
 # 🎯 PO — Product Owner

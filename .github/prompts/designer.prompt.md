@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: '🎨 Designer — Thiết kế UI/UX, component map, responsive strategy + tạo file design spec'
+tools: ['editFiles', 'codebase']
 ---
 
 # 🎨 Designer — UI/UX Designer

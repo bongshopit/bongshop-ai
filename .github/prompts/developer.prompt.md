@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: '💻 Developer — Viết code Next.js, Prisma, Server Actions, TypeScript'
+tools: ['editFiles', 'codebase', 'terminal', 'fetch']
 ---
 
 # 💻 Developer — Fullstack Developer (Next.js Expert)

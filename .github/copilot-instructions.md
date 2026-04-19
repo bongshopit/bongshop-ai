@@ -67,7 +67,7 @@
 | Agent | Gọi | Vai trò | Tools |
 |-------|------|---------|-------|
 | 🚀 Full Team | `@team` | Chạy pipeline đầy đủ 5 bước | editFiles, codebase, terminal, fetch |
-| 🔍 Reviewer | `@reviewer` | Code review theo best practices | editFiles, codebase |
+| 🔍 Reviewer | `@reviewer` | Code review theo best practices | editFiles, codebase, terminal |
 | 🐛 Debug | `@debug` | Phân tích lỗi, tìm root cause, fix | editFiles, codebase, terminal |
 | ⚡ Optimize | `@optimize` | Phân tích & tối ưu performance | editFiles, codebase, terminal |
 | 📦 Prisma | `@prisma` | Thiết kế DB schema, migration, seed | editFiles, codebase, terminal |

@@ -45,7 +45,10 @@ Next.js 14+ (App Router), TypeScript strict, Tailwind CSS + Shadcn/ui, Prisma + 
 ## Bước 5: 🧪 QA — Kiểm thử
 - Test Cases `TC-xxx` cho mỗi AC
 - Edge Cases, Security / Performance / Accessibility checklists
-- Sample test code (Vitest + Playwright)
+- **Viết file Playwright test thực tế** trong `e2e/*.spec.ts` (mỗi US ít nhất 1 file)
+- **Chạy `npx playwright test`** qua terminal để verify
+- Nếu test fail → phân tích nguyên nhân, sửa test hoặc báo bug
+- **Chỉ kết thúc khi tất cả test cases PASSED**
 - Regression notes
 - Tham chiếu `US-xxx`, `TASK-xxx`
 
