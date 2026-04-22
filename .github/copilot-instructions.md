@@ -128,7 +128,7 @@ src/
 |----|---------------|--------|
 | US-001 | Quản lý nhân viên | Completed |
 | US-002 | Chấm công | Verified |
-| US-003 | Ca làm việc | In Development |
+| US-003 | Ca làm việc | Verified |
 | US-004 | Tồn kho | In Progress |
 | US-005 | Sổ quỹ | In Progress |
 | US-006 | Lương | In Progress |
