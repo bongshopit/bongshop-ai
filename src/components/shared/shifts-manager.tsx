@@ -133,14 +133,14 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
   }
 
   async function handleDeleteShift(id: string, name: string) {
-    if (!window.confirm(`Xoa ca "${name}"?`)) return;
+    if (!window.confirm(`Xóa ca "${name}"?`)) return;
     const result = await deleteShift(id);
     if (result?.error) setDeleteErr(result.error);
     else setDeleteErr(null);
   }
 
   async function handleDeleteAssignment(id: string) {
-    if (!window.confirm("Huy phan ca nay?")) return;
+    if (!window.confirm("Hủy phân ca này?")) return;
     await deleteShiftAssignment(id);
   }
 
@@ -156,32 +156,32 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
           <button
             onClick={() => setDeleteErr(null)}
             className="ml-4 text-red-500 hover:text-red-700"
-            aria-label="Dong thong bao loi"
+            aria-label="Đóng thông báo lỗi"
           >
             &#10005;
           </button>
         </div>
       )}
 
-      {/* Section 1: Danh sach ca */}
+      {/* Section 1: Danh sách ca */}
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
-          <h2 className="font-semibold text-gray-900">Danh sach ca lam viec</h2>
+          <h2 className="font-semibold text-gray-900">Danh sách ca làm việc</h2>
           <button
             onClick={openCreate}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
           >
-            + Them ca
+            + Thêm ca
           </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
               <tr>
-                <th className="px-4 py-3 font-medium">Ten ca</th>
-                <th className="px-4 py-3 font-medium">Gio bat dau</th>
-                <th className="px-4 py-3 font-medium">Gio ket thuc</th>
-                <th className="px-4 py-3 font-medium">So phan ca</th>
+                <th className="px-4 py-3 font-medium">Tên ca</th>
+                <th className="px-4 py-3 font-medium">Giờ bắt đầu</th>
+                <th className="px-4 py-3 font-medium">Giờ kết thúc</th>
+                <th className="px-4 py-3 font-medium">Số phân ca</th>
                 <th className="px-4 py-3 font-medium"></th>
               </tr>
             </thead>
@@ -189,7 +189,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
               {shifts.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
-                    Chua co ca lam viec nao. Nhan &quot;Them ca&quot; de tao moi.
+                    Chưa có ca làm việc nào. Nhấn &quot;Thêm ca&quot; để tạo mới.
                   </td>
                 </tr>
               ) : (
@@ -212,16 +212,16 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                         <button
                           onClick={() => openEdit(shift)}
                           className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded"
-                          aria-label={`Sua ca ${shift.name}`}
+                          aria-label={`Sửa ca ${shift.name}`}
                         >
-                          Sua
+                          Sửa
                         </button>
                         <button
                           onClick={() => handleDeleteShift(shift.id, shift.name)}
                           className="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded"
-                          aria-label={`Xoa ca ${shift.name}`}
+                          aria-label={`Xóa ca ${shift.name}`}
                         >
-                          Xoa
+                          Xóa
                         </button>
                       </div>
                     </td>
@@ -232,25 +232,25 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
           </table>
         </div>
         <div className="px-4 py-2 border-t text-xs text-gray-400">
-          Tong: {shifts.length} ca
+          Tổng: {shifts.length} ca
         </div>
       </div>
 
-      {/* Section 2: Phan ca */}
+      {/* Section 2: Phân ca */}
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
-          <h2 className="font-semibold text-gray-900">Phan ca</h2>
+          <h2 className="font-semibold text-gray-900">Phân ca</h2>
           <button
             onClick={() => setShowAssignDialog(true)}
             disabled={employees.length === 0 || shifts.length === 0}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            + Phan ca
+            + Phân ca
           </button>
         </div>
         <form method="GET" className="flex flex-wrap gap-3 px-4 py-3 border-b bg-gray-50/50">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-500">Ngay</label>
+            <label className="text-xs text-gray-500">Ngày</label>
             <input
               type="date"
               name="date"
@@ -263,7 +263,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
               type="submit"
               className="h-9 px-3 text-sm bg-gray-100 hover:bg-gray-200 rounded-md border border-input"
             >
-              Loc
+              Lọc
             </button>
           </div>
         </form>
@@ -271,11 +271,11 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
               <tr>
-                <th className="px-4 py-3 font-medium">Ngay</th>
-                <th className="px-4 py-3 font-medium">Ma NV</th>
-                <th className="px-4 py-3 font-medium">Ho ten</th>
-                <th className="px-4 py-3 font-medium">Ca lam viec</th>
-                <th className="px-4 py-3 font-medium">Gio</th>
+                <th className="px-4 py-3 font-medium">Ngày</th>
+                <th className="px-4 py-3 font-medium">Mã NV</th>
+                <th className="px-4 py-3 font-medium">Họ tên</th>
+                <th className="px-4 py-3 font-medium">Ca làm việc</th>
+                <th className="px-4 py-3 font-medium">Giờ</th>
                 <th className="px-4 py-3 font-medium"></th>
               </tr>
             </thead>
@@ -283,7 +283,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
               {assignments.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
-                    Chua co phan ca nao trong ngay nay.
+                    Chưa có phân ca nào trong ngày này.
                   </td>
                 </tr>
               ) : (
@@ -306,9 +306,9 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                       <button
                         onClick={() => handleDeleteAssignment(a.id)}
                         className="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded"
-                        aria-label="Huy phan ca"
+                        aria-label="Hủy phân ca"
                       >
-                        Huy
+                        Hủy
                       </button>
                     </td>
                   </tr>
@@ -318,7 +318,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
           </table>
         </div>
         <div className="px-4 py-2 border-t text-xs text-gray-400">
-          Tong: {assignments.length} phan ca
+          Tổng: {assignments.length} phân ca
         </div>
       </div>
 
@@ -328,7 +328,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                {isEditing ? "Sua ca lam viec" : "Them ca lam viec"}
+                {isEditing ? "Sửa ca làm việc" : "Thêm ca làm việc"}
               </h3>
               <button
                 onClick={() => {
@@ -336,7 +336,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                   setEditingShift(null);
                 }}
                 className="text-gray-400 hover:text-gray-600 text-xl leading-none"
-                aria-label="Dong"
+                aria-label="Đóng"
               >
                 &#10005;
               </button>
@@ -351,14 +351,14 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                   htmlFor="shift-name"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Ten ca <span className="text-red-500">*</span>
+                  Tên ca <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="shift-name"
                   name="name"
                   type="text"
                   defaultValue={editingShift?.name ?? ""}
-                  placeholder="VD: Ca sang"
+                  placeholder="VD: Ca sáng"
                   required
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
@@ -369,7 +369,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                     htmlFor="shift-start"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Gio bat dau <span className="text-red-500">*</span>
+                    Giờ bắt đầu <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="shift-start"
@@ -385,7 +385,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                     htmlFor="shift-end"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Gio ket thuc <span className="text-red-500">*</span>
+                    Giờ kết thúc <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="shift-end"
@@ -406,11 +406,11 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  Huy
+                  Hủy
                 </button>
                 <SubmitButton
-                  label={isEditing ? "Cap nhat" : "Luu ca"}
-                  pendingLabel="Dang luu..."
+                  label={isEditing ? "Cập nhật" : "Lưu ca"}
+                  pendingLabel="Đang lưu..."
                 />
               </div>
             </form>
@@ -424,12 +424,12 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                Phan ca cho nhan vien
+                Phân ca cho nhân viên
               </h3>
               <button
                 onClick={() => setShowAssignDialog(false)}
                 className="text-gray-400 hover:text-gray-600 text-xl leading-none"
-                aria-label="Dong"
+                aria-label="Đóng"
               >
                 &#10005;
               </button>
@@ -441,7 +441,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                   htmlFor="assign-employee"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Nhan vien <span className="text-red-500">*</span>
+                  Nhân viên <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="assign-employee"
@@ -449,7 +449,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                   required
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
-                  <option value="">-- Chon nhan vien --</option>
+                  <option value="">-- Chọn nhân viên --</option>
                   {employees.map((e) => (
                     <option key={e.id} value={e.id}>
                       {e.employeeCode} &mdash; {e.lastName} {e.firstName}
@@ -462,7 +462,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                   htmlFor="assign-shift"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Ca lam viec <span className="text-red-500">*</span>
+                  Ca làm việc <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="assign-shift"
@@ -470,7 +470,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                   required
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
-                  <option value="">-- Chon ca --</option>
+                  <option value="">-- Chọn ca --</option>
                   {shifts.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} ({s.startTime} &mdash; {s.endTime})
@@ -483,7 +483,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                   htmlFor="assign-date"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Ngay <span className="text-red-500">*</span>
+                  Ngày <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="assign-date"
@@ -500,9 +500,9 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
                   onClick={() => setShowAssignDialog(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  Huy
+                  Hủy
                 </button>
-                <SubmitButton label="Phan ca" pendingLabel="Dang luu..." />
+                <SubmitButton label="Phân ca" pendingLabel="Đang lưu..." />
               </div>
             </form>
           </div>

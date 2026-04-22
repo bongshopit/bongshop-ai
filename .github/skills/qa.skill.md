@@ -15,9 +15,9 @@ import { test, expect } from "@playwright/test";
 async function login(page: import("@playwright/test").Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill("admin@bongshop.vn");
-  await page.getByLabel("Password").fill("admin123");
-  await page.getByRole("button", { name: /đăng nhập/i }).click();
-  await page.waitForURL(/admin/);
+  await page.getByLabel("Mật khẩu").fill("admin123");
+  await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await page.waitForURL("**/admin", { timeout: 10000 });
 }
 
 test.describe("US-xxx: [Tên tính năng]", () => {

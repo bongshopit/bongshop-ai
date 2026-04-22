@@ -27,7 +27,7 @@ export async function updateShift(
   formData: FormData
 ): Promise<ShiftActionState> {
   const id = formData.get("id") as string;
-  if (!id) return { error: "ID khong hop le" };
+  if (!id) return { error: "ID không hợp lệ" };
 
   const parsed = shiftSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -39,7 +39,7 @@ export async function updateShift(
 
 export async function deleteShift(id: string): Promise<{ error: string } | null> {
   const count = await prisma.shiftAssignment.count({ where: { shiftId: id } });
-  if (count > 0) return { error: "Ca dang duoc su dung, khong the xoa" };
+  if (count > 0) return { error: "Ca đang được sử dụng, không thể xóa" };
 
   await prisma.shift.delete({ where: { id } });
   revalidatePath("/admin/shifts");
@@ -59,7 +59,7 @@ export async function createShiftAssignment(
   const existing = await prisma.shiftAssignment.findUnique({
     where: { employeeId_shiftId_date: { employeeId, shiftId, date: dateObj } },
   });
-  if (existing) return { error: "Nhan vien da duoc phan ca nay trong ngay" };
+  if (existing) return { error: "Nhân viên đã được phân ca này trong ngày" };
 
   await prisma.shiftAssignment.create({ data: { employeeId, shiftId, date: dateObj } });
   revalidatePath("/admin/shifts");

@@ -10,95 +10,95 @@ async function login(page: import("@playwright/test").Page) {
 
 const uniqueName = `Ca-test-${String(Date.now()).slice(-6)}`;
 
-test.describe("US-003: Ca lam viec", () => {
+test.describe("US-003: Ca làm việc", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
 
-  test("TC-301: Trang ca lam viec hien thi dung", async ({ page }) => {
+  test("TC-301: Trang ca làm việc hiển thị đúng", async ({ page }) => {
     await page.goto("/admin/shifts");
 
-    await expect(page.locator("h1", { hasText: "Ca lam viec" })).toBeVisible();
-    await expect(page.locator("h2", { hasText: "Danh sach ca lam viec" })).toBeVisible();
-    await expect(page.locator("h2", { hasText: "Phan ca" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Them ca/ })).toBeVisible();
+    await expect(page.locator("h1", { hasText: "Ca làm việc" })).toBeVisible();
+    await expect(page.locator("h2", { hasText: "Danh sách ca làm việc" })).toBeVisible();
+    await expect(page.locator("h2", { hasText: "Phân ca" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Thêm ca/ })).toBeVisible();
     await expect(page.locator("table").first()).toBeVisible();
   });
 
-  test("TC-302: 3 ca mac dinh tu seed hien thi", async ({ page }) => {
+  test("TC-302: 3 ca mặc định từ seed hiển thị", async ({ page }) => {
     await page.goto("/admin/shifts");
 
-    await expect(page.getByText("Ca sáng")).toBeVisible();
-    await expect(page.getByText("Ca chiều")).toBeVisible();
-    await expect(page.getByText("Ca tối")).toBeVisible();
+    await expect(page.getByText("Ca sáng").first()).toBeVisible();
+    await expect(page.getByText("Ca chiều").first()).toBeVisible();
+    await expect(page.getByText("Ca tối").first()).toBeVisible();
   });
 
-  test("TC-303: Them ca moi thanh cong", async ({ page }) => {
+  test("TC-303: Thêm ca mới thành công", async ({ page }) => {
     await page.goto("/admin/shifts");
 
-    await page.getByRole("button", { name: /Them ca/ }).click();
+    await page.getByRole("button", { name: /Thêm ca/ }).click();
 
-    // Dialog hien ra
-    await expect(page.locator("h3", { hasText: "Them ca lam viec" })).toBeVisible();
+    // Dialog hiển ra
+    await expect(page.locator("h3", { hasText: "Thêm ca làm việc" })).toBeVisible();
 
-    // Dien form
-    await page.getByLabel("Ten ca").fill(uniqueName);
-    await page.getByLabel("Gio bat dau").fill("08:00");
-    await page.getByLabel("Gio ket thuc").fill("16:00");
+    // Điền form
+    await page.getByLabel("Tên ca").fill(uniqueName);
+    await page.getByLabel("Giờ bắt đầu").fill("08:00");
+    await page.getByLabel("Giờ kết thúc").fill("16:00");
 
-    await page.getByRole("button", { name: "Luu ca" }).click();
+    await page.getByRole("button", { name: "Lưu ca" }).click();
 
-    // Dialog dong, ca moi xuat hien
-    await expect(page.locator("h3", { hasText: "Them ca lam viec" })).not.toBeVisible({ timeout: 5000 });
+    // Dialog đóng, ca mới xuất hiện
+    await expect(page.locator("h3", { hasText: "Thêm ca làm việc" })).not.toBeVisible({ timeout: 5000 });
     await expect(page.getByText(uniqueName)).toBeVisible({ timeout: 5000 });
   });
 
-  test("TC-304: Sua ca thanh cong", async ({ page }) => {
+  test("TC-304: Sửa ca thành công", async ({ page }) => {
     await page.goto("/admin/shifts");
 
-    // Tim nut Sua cua ca vua tao
+    // Tìm nút Sửa của ca vừa tạo
     const row = page.locator("tr").filter({ hasText: uniqueName });
-    await row.getByRole("button", { name: /Sua/ }).click();
+    await row.getByRole("button", { name: /Sửa/ }).click();
 
-    // Dialog sua hien ra
-    await expect(page.locator("h3", { hasText: "Sua ca lam viec" })).toBeVisible();
+    // Dialog sửa hiển ra
+    await expect(page.locator("h3", { hasText: "Sửa ca làm việc" })).toBeVisible();
 
-    // Cap nhat ten
-    const nameInput = page.getByLabel("Ten ca");
+    // Cập nhật tên
+    const nameInput = page.getByLabel("Tên ca");
     await nameInput.clear();
     await nameInput.fill(uniqueName + "-edited");
 
-    await page.getByRole("button", { name: "Cap nhat" }).click();
+    await page.getByRole("button", { name: "Cập nhật" }).click();
 
     // Verify updated
     await expect(page.getByText(uniqueName + "-edited")).toBeVisible({ timeout: 5000 });
   });
 
-  test("TC-305: Validation - Ten ca khong duoc trong", async ({ page }) => {
+  test("TC-305: Validation - Tên ca không được trống", async ({ page }) => {
     await page.goto("/admin/shifts");
 
-    await page.getByRole("button", { name: /Them ca/ }).click();
-    await expect(page.locator("h3", { hasText: "Them ca lam viec" })).toBeVisible();
+    await page.getByRole("button", { name: /Thêm ca/ }).click();
+    await expect(page.locator("h3", { hasText: "Thêm ca làm việc" })).toBeVisible();
 
-    // Bo trong ten ca, chi dien gio
-    await page.getByLabel("Gio bat dau").fill("09:00");
-    await page.getByLabel("Gio ket thuc").fill("17:00");
+    // Bỏ trống tên ca, chỉ điền giờ
+    await page.getByLabel("Giờ bắt đầu").fill("09:00");
+    await page.getByLabel("Giờ kết thúc").fill("17:00");
 
-    // HTML5 required ngan submit
-    const submitBtn = page.getByRole("button", { name: "Luu ca" });
+    // HTML5 required ngăn submit
+    const submitBtn = page.getByRole("button", { name: "Lưu ca" });
     await expect(submitBtn).toBeVisible();
 
-    // Dialog van mo
-    await expect(page.locator("h3", { hasText: "Them ca lam viec" })).toBeVisible();
+    // Dialog vẫn mở
+    await expect(page.locator("h3", { hasText: "Thêm ca làm việc" })).toBeVisible();
   });
 
-  test("TC-306: Phan ca cho nhan vien", async ({ page }) => {
+  test("TC-306: Phân ca cho nhân viên", async ({ page }) => {
     await page.goto("/admin/shifts");
 
-    // Kiem tra co nhan vien truoc
-    const assignBtn = page.getByRole("button", { name: /Phan ca/ }).first();
+    // Kiểm tra có nhân viên trước
+    const assignBtn = page.getByRole("button", { name: /Phân ca/ }).first();
     const isDisabled = await assignBtn.isDisabled();
     if (isDisabled) {
       test.skip();
@@ -106,52 +106,52 @@ test.describe("US-003: Ca lam viec", () => {
     }
 
     await assignBtn.click();
-    await expect(page.locator("h3", { hasText: "Phan ca cho nhan vien" })).toBeVisible();
+    await expect(page.locator("h3", { hasText: "Phân ca cho nhân viên" })).toBeVisible();
 
-    // Chon nhan vien dau tien
+    // Chọn nhân viên đầu tiên
     const employeeSelect = page.locator("select[name='employeeId']");
     await employeeSelect.selectOption({ index: 1 });
 
-    // Chon ca dau tien
+    // Chọn ca đầu tiên
     const shiftSelect = page.locator("select[name='shiftId']");
     await shiftSelect.selectOption({ index: 1 });
 
-    // Dat ngay hom nay
+    // Đặt ngày hôm nay
     const today = new Date().toISOString().split("T")[0];
     await page.locator("input#assign-date").fill(today);
 
-    await page.getByRole("button", { name: "Phan ca", exact: true }).click();
+    await page.getByRole("button", { name: "Phân ca", exact: true }).click();
 
-    // Dialog dong hoac hien loi (neu da phan ca)
+    // Dialog đóng hoặc hiển lỗi (nếu đã phân ca)
     await page.waitForTimeout(1500);
-    const dialogVisible = await page.locator("h3", { hasText: "Phan ca cho nhan vien" }).isVisible();
+    const dialogVisible = await page.locator("h3", { hasText: "Phân ca cho nhân viên" }).isVisible();
     if (dialogVisible) {
-      // Co the da phan ca roi - kiem tra loi
+      // Có thể đã phân ca rồi - kiểm tra lỗi
       const errVisible = await page.locator(".bg-red-50").isVisible();
       expect(errVisible).toBe(true);
     } else {
-      // Thanh cong - kiem tra trong bang phan ca
+      // Thành công - kiểm tra trong bảng phân ca
       await expect(page.locator("table").nth(1)).toBeVisible();
     }
   });
 
-  test("TC-307: Filter phan ca theo ngay", async ({ page }) => {
+  test("TC-307: Filter phân ca theo ngày", async ({ page }) => {
     await page.goto("/admin/shifts");
 
     const today = new Date().toISOString().split("T")[0];
     const dateInput = page.locator("input[name='date']");
     await dateInput.fill(today);
-    await page.getByRole("button", { name: "Loc" }).click();
+    await page.getByRole("button", { name: "Lọc" }).click();
 
-    // URL chua date param
+    // URL chứa date param
     await expect(page).toHaveURL(new RegExp(`date=${today}`), { timeout: 3000 });
     await expect(page.locator("table").nth(1)).toBeVisible();
   });
 
-  test("TC-308: Xoa ca dang su dung bao loi", async ({ page }) => {
+  test("TC-308: Xóa ca đang sử dụng báo lỗi", async ({ page }) => {
     await page.goto("/admin/shifts");
 
-    // Tim ca co phan ca (so phan ca > 0) - neu co
+    // Tìm ca có phân ca (số phân ca > 0) - nếu có
     const rows = page.locator("tbody tr");
     const count = await rows.count();
 
@@ -160,21 +160,21 @@ test.describe("US-003: Ca lam viec", () => {
       const assignCountText = await row.locator("td").nth(3).textContent();
       if (assignCountText && parseInt(assignCountText) > 0) {
         page.on("dialog", (dialog) => dialog.accept());
-        await row.getByRole("button", { name: /Xoa/ }).click();
+        await row.getByRole("button", { name: /Xóa/ }).click();
         await page.waitForTimeout(1000);
-        // Nen hien loi
+        // Nên hiển lỗi
         await expect(page.locator(".bg-red-50").first()).toBeVisible({ timeout: 3000 });
         return;
       }
     }
-    // Khong co ca nao co phan ca -> skip
+    // Không có ca nào có phân ca -> skip
     test.skip();
   });
 
-  test("TC-309: Xoa ca khong co phan ca thanh cong", async ({ page }) => {
+  test("TC-309: Xóa ca không có phân ca thành công", async ({ page }) => {
     await page.goto("/admin/shifts");
 
-    // Tim ca vua tao (edited) de xoa
+    // Tìm ca vừa tạo (edited) để xóa
     const targetName = uniqueName + "-edited";
     const row = page.locator("tr").filter({ hasText: targetName });
     const rowExists = await row.count();
@@ -184,18 +184,18 @@ test.describe("US-003: Ca lam viec", () => {
     }
 
     page.on("dialog", (dialog) => dialog.accept());
-    await row.getByRole("button", { name: /Xoa/ }).click();
+    await row.getByRole("button", { name: /Xóa/ }).click();
     await page.waitForTimeout(1000);
 
     await expect(page.getByText(targetName)).not.toBeVisible({ timeout: 5000 });
   });
 
-  test("TC-310: Empty state bang phan ca", async ({ page }) => {
-    // Chon ngay khong co phan ca nao
+  test("TC-310: Empty state bảng phân ca", async ({ page }) => {
+    // Chọn ngày không có phân ca nào
     await page.goto("/admin/shifts?date=2020-01-01");
 
     await expect(
-      page.getByText("Chua co phan ca nao trong ngay nay.")
+      page.getByText("Chưa có phân ca nào trong ngày này.")
     ).toBeVisible({ timeout: 5000 });
   });
 });

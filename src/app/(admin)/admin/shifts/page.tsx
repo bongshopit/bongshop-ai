@@ -62,7 +62,7 @@ export default async function ShiftsPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Ca lam viec</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Ca làm việc</h1>
       <ShiftsManager
         shifts={shifts}
         assignments={assignments}
