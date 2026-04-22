@@ -1,7 +1,7 @@
 ---
 name: qa
 description: '🧪 QA Engineer — Test cases, edge cases, security/performance/a11y checklist, viết & chạy Playwright tests cho BongShop'
-tools: ['editFiles', 'codebase', 'terminal']
+tools: ['editFiles', 'codebase', 'runCommands']
 ---
 
 # Vai trò

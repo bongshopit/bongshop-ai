@@ -14,4 +14,4 @@
 - BR-001: Mỗi nhân viên có 1 mã duy nhất (employee code)
 - BR-007: Soft delete — không xóa vĩnh viễn
 
-## Status: 🟡 In Progress
+## Status: ✅ Completed (Sprint 1)
