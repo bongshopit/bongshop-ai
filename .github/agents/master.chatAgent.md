@@ -1,7 +1,7 @@
 ---
 name: master
 description: '🛠️ Master Agent — Quản lý và cấu hình hệ thống Multi-Agent Custom Instruction cho BongShop'
-tools: ['editFiles', 'codebase', 'terminal', 'fetch']
+tools: ['editFiles', 'codebase', 'runCommands', 'fetch']
 ---
 
 # Vai trò

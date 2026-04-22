@@ -66,7 +66,7 @@
 
 | Agent | Gọi | Vai trò | Tools |
 |-------|------|---------|-------|
-| 🚀 Full Team | `@team` | Chạy pipeline đầy đủ 5 bước | editFiles, codebase, terminal, fetch |
+| 🚀 Full Team | `@team` | Orchestrator hướng dẫn pipeline — chỉ định agent phù hợp cho từng bước | codebase |
 | 🔍 Reviewer | `@reviewer` | Code review theo best practices | editFiles, codebase, terminal |
 | 🐛 Debug | `@debug` | Phân tích lỗi, tìm root cause, fix | editFiles, codebase, terminal |
 | ⚡ Optimize | `@optimize` | Phân tích & tối ưu performance | editFiles, codebase, terminal |
@@ -82,12 +82,17 @@
 
 ## Quy trình xử lý yêu cầu (Full Pipeline)
 
-Khi dùng `@team` hoặc khi cần phân tích toàn diện:
+Khi dùng `@team`:
 
 ```
 Chủ shop (Ý tưởng)
        │
        ▼
+   ┌────────┐
+   │ @team  │ ──▶ Phân tích yêu cầu + đưa ra kế hoạch pipeline đầy đủ
+   └───┬────┘     Hướng dẫn gọi từng agent theo thứ tự với context cụ thể
+       │
+       ▼  (người dùng gọi từng agent theo hướng dẫn)
    ┌───────┐
    │ @ba   │ ──▶ User Stories (US-xxx) + tạo file `docs/user-stories/US-xxx.md`, AC, BR
    └───┬───┘

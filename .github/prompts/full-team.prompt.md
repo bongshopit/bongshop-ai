@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
 description: '🚀 Full Team — Chạy pipeline đầy đủ 5 agent: BA → PO → Designer → Developer → QA'
-tools: ['editFiles', 'codebase', 'terminal', 'fetch']
+tools: ['editFiles', 'codebase', 'runCommands', 'run_in_terminal', 'fetch']
 ---
 
 # 🚀 BongShop Full Team Pipeline
