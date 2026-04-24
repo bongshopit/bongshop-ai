@@ -28,6 +28,7 @@
     "@radix-ui/react-separator": "^1.0.3",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tooltip": "^1.0.7",
+    "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "date-fns": "^3.3.1",
@@ -40,9 +41,9 @@
     "sonner": "^1.4.0",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
+    "xlsx": "^0.18.5",
     "zod": "^3.22.4",
-    "zustand": "^4.5.1",
-    "bcryptjs": "^2.4.3"
+    "zustand": "^4.5.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.42.0",

@@ -6,19 +6,24 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { EmployeeSearch } from "@/components/shared/employee-search";
+import { Pagination } from "@/components/shared/pagination";
 
 export const metadata: Metadata = {
   title: "Nhân viên - BongShop",
   description: "Quản lý nhân viên BongShop",
 };
 
+const PAGE_SIZE = 20;
+
 interface SearchParams {
   q?: string;
   department?: string;
   status?: string;
+  page?: string;
 }
 
 async function getEmployees(params: SearchParams) {
+  const page = Math.max(1, parseInt(params.page ?? "1") || 1);
   const where: Prisma.EmployeeWhereInput = {};
 
   if (params.q) {
@@ -39,10 +44,20 @@ async function getEmployees(params: SearchParams) {
     where.isActive = false;
   }
 
-  return prisma.employee.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-  });
+  const [data, total] = await Promise.all([
+    prisma.employee.findMany({
+      where,
+      take: PAGE_SIZE,
+      skip: (page - 1) * PAGE_SIZE,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.employee.count({ where }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const validPage = Math.min(page, totalPages);
+
+  return { data, total, page: validPage, totalPages };
 }
 
 async function getDepartments() {
@@ -51,7 +66,7 @@ async function getDepartments() {
     distinct: ["department"],
     orderBy: { department: "asc" },
   });
-  return result.map((r) => r.department);
+  return result.map((r) => r.department).filter((d): d is string => d !== null);
 }
 
 export default async function EmployeesPage({
@@ -59,10 +74,15 @@ export default async function EmployeesPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const [employees, departments] = await Promise.all([
+  const [{ data: employees, total, page, totalPages }, departments] = await Promise.all([
     getEmployees(searchParams),
     getDepartments(),
   ]);
+  const spParams = {
+    q: searchParams.q,
+    department: searchParams.department,
+    status: searchParams.status,
+  } as Record<string, string>;
 
   return (
     <div>
@@ -165,9 +185,17 @@ export default async function EmployeesPage({
           </table>
         </div>
         <div className="px-4 py-3 bg-gray-50 border-t text-xs text-gray-500">
-          Tổng: {employees.length} nhân viên
+          Tổng: {total} nhân viên
         </div>
       </div>
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalItems={total}
+        pageSize={PAGE_SIZE}
+        baseUrl="/admin/employees"
+        searchParams={spParams}
+      />
     </div>
   );
 }

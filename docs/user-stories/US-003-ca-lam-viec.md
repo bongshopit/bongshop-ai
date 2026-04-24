@@ -11,4 +11,4 @@
 ## Business Rules
 - BR-003: Ca làm việc không được trùng giờ cho cùng 1 nhân viên
 
-## Status: 🟡 In Progress
+## Status: ✅ Verified (Sprint 1)

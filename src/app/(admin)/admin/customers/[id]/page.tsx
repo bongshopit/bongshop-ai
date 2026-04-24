@@ -1,10 +1,16 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { ChevronLeft, Pencil } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AddLoyaltyPointsDialog } from "@/components/shared/add-loyalty-points-dialog";
+import { AdjustLoyaltyPointsDialog } from "@/components/shared/adjust-loyalty-points-dialog";
+import { LoyaltyLogTable } from "@/components/shared/loyalty-log-table";
 
 export async function generateMetadata({
   params,
@@ -27,17 +33,23 @@ export default async function CustomerDetailPage({
 }: {
   params: { id: string };
 }) {
-  const customer = await prisma.customer.findUnique({
-    where: { id: params.id },
-    include: {
-      orders: {
-        orderBy: { createdAt: "desc" },
-        take: 10,
+  const [customer, session] = await Promise.all([
+    prisma.customer.findUnique({
+      where: { id: params.id },
+      include: {
+        orders: {
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        },
       },
-    },
-  });
+    }),
+    getServerSession(authOptions),
+  ]);
 
   if (!customer) notFound();
+
+  const canManageLoyalty =
+    session?.user?.role === "MANAGER" || session?.user?.role === "ADMIN";
 
   const fields = [
     { label: "Tên khách hàng", value: customer.name },
@@ -86,7 +98,7 @@ export default async function CustomerDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="text-base">Thông tin liên hệ</CardTitle>
@@ -105,7 +117,64 @@ export default async function CustomerDetailPage({
           </CardContent>
         </Card>
 
+        {/* US-012: Tích điểm */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Điểm tích lũy</CardTitle>
+              {canManageLoyalty && (
+                <div className="flex items-center gap-2">
+                  <AddLoyaltyPointsDialog customerId={customer.id} />
+                  <AdjustLoyaltyPointsDialog customerId={customer.id} />
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2 border-b">
+                <span className="text-sm text-gray-600">Tổng điểm</span>
+                <span className="text-xl font-bold text-blue-600">
+                  {customer.loyaltyPointsDefault + customer.loyaltyPointsSua + customer.loyaltyPointsTaBim}
+                </span>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">Mặc định</span>
+                  <span className="font-medium text-gray-900">
+                    {customer.loyaltyPointsDefault} điểm
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">Sữa</span>
+                  <span className="font-medium text-blue-700">
+                    {customer.loyaltyPointsSua} điểm
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">Tã bỉm</span>
+                  <span className="font-medium text-purple-700">
+                    {customer.loyaltyPointsTaBim} điểm
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* US-012: Lịch sử điểm */}
         <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Lịch sử tích điểm (10 gần nhất)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Suspense fallback={<div className="h-24 animate-pulse bg-gray-100 rounded" />}>
+              <LoyaltyLogTable customerId={customer.id} />
+            </Suspense>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="text-base">
               Lịch sử đơn hàng ({customer.orders.length} gần nhất)

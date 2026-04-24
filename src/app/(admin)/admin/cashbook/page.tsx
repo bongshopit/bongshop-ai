@@ -3,16 +3,20 @@ import { Prisma } from "@prisma/client";
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { CashTransactionForm } from "@/components/shared/cash-transaction-form";
+import { Pagination } from "@/components/shared/pagination";
 
 export const metadata: Metadata = {
   title: "Sổ quỹ - BongShop",
   description: "Quản lý sổ quỹ thu chi BongShop",
 };
 
+const PAGE_SIZE = 20;
+
 interface SearchParams {
   from?: string;
   to?: string;
   type?: string;
+  page?: string;
 }
 
 async function getSummary(from?: Date, to?: Date) {
@@ -41,6 +45,7 @@ async function getSummary(from?: Date, to?: Date) {
 }
 
 async function getTransactions(params: SearchParams) {
+  const page = Math.max(1, parseInt(params.page ?? "1") || 1);
   const where: Prisma.CashTransactionWhereInput = {};
 
   if (params.from || params.to) {
@@ -56,10 +61,20 @@ async function getTransactions(params: SearchParams) {
     where.type = params.type;
   }
 
-  return prisma.cashTransaction.findMany({
-    where,
-    orderBy: { date: "desc" },
-  });
+  const [data, total] = await Promise.all([
+    prisma.cashTransaction.findMany({
+      where,
+      take: PAGE_SIZE,
+      skip: (page - 1) * PAGE_SIZE,
+      orderBy: { date: "desc" },
+    }),
+    prisma.cashTransaction.count({ where }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const validPage = Math.min(page, totalPages);
+
+  return { data, total, page: validPage, totalPages };
 }
 
 async function getTotalBalance() {
@@ -99,8 +114,14 @@ export default async function CashbookPage({
     getSummary(fromDate, toDate),
     getTotalBalance(),
   ]);
+  const { data: txList, total: txTotal, page: txPage, totalPages: txTotalPages } = transactions;
 
   const isFiltered = !!(searchParams.from || searchParams.to || searchParams.type);
+  const spParams = {
+    from: searchParams.from,
+    to: searchParams.to,
+    type: searchParams.type,
+  } as Record<string, string>;
 
   return (
     <div className="space-y-6">
@@ -224,14 +245,14 @@ export default async function CashbookPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {transactions.length === 0 ? (
+                  {txList.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
                         Không có giao dịch nào
                       </td>
                     </tr>
                   ) : (
-                    transactions.map((tx) => (
+                    txList.map((tx) => (
                       <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                           {formatDate(tx.date)}
@@ -267,6 +288,14 @@ export default async function CashbookPage({
               </table>
             </div>
           </div>
+          <Pagination
+            currentPage={txPage}
+            totalPages={txTotalPages}
+            totalItems={txTotal}
+            pageSize={PAGE_SIZE}
+            baseUrl="/admin/cashbook"
+            searchParams={spParams}
+          />
         </div>
       </div>
     </div>

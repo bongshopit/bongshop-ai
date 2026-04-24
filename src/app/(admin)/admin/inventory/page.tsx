@@ -1,38 +1,59 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, Layers } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/shared/pagination";
+import { ProductImportDialog } from "@/components/shared/product-import-dialog";
 
 export const metadata: Metadata = {
   title: "Tồn kho - BongShop",
   description: "Quản lý tồn kho BongShop",
 };
 
+const PAGE_SIZE = 20;
+
 interface SearchParams {
   q?: string;
   status?: string;
+  page?: string;
 }
 
 async function getProducts(params: SearchParams) {
-  return prisma.product.findMany({
-    where: {
-      ...(params.q
-        ? {
-            OR: [
-              { name: { contains: params.q, mode: "insensitive" } },
-              { sku: { contains: params.q, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-      ...(params.status === "active"
-        ? { isActive: true }
-        : params.status === "inactive"
-        ? { isActive: false }
-        : {}),
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const page = Math.max(1, parseInt(params.page ?? "1") || 1);
+  const where = {
+    ...(params.q
+      ? {
+          OR: [
+            { name: { contains: params.q, mode: "insensitive" as const } },
+            { sku: { contains: params.q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+    ...(params.status === "active"
+      ? { isActive: true }
+      : params.status === "inactive"
+      ? { isActive: false }
+      : {}),
+  };
+
+  const [data, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      take: PAGE_SIZE,
+      skip: (page - 1) * PAGE_SIZE,
+      orderBy: { createdAt: "desc" },
+      include: { productGroup: { select: { id: true, name: true, loyaltyCategory: true } } },
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const validPage = Math.min(page, totalPages);
+
+  return { data, total, page: validPage, totalPages };
 }
 
 function formatCurrency(value: { toString(): string }) {
@@ -47,18 +68,32 @@ export default async function InventoryPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const products = await getProducts(searchParams);
+  const [{ data: products, total, page, totalPages }, session] = await Promise.all([
+    getProducts(searchParams),
+    getServerSession(authOptions),
+  ]);
+  const canImport = session?.user?.role === "MANAGER" || session?.user?.role === "ADMIN";
+  const spParams = { q: searchParams.q, status: searchParams.status } as Record<string, string>;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Tồn kho</h1>
-        <Button asChild>
-          <Link href="/admin/inventory/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Thêm sản phẩm
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/inventory/groups">
+              <Layers className="mr-2 h-4 w-4" />
+              Nhóm hàng
+            </Link>
+          </Button>
+          {canImport && <ProductImportDialog />}
+          <Button asChild>
+            <Link href="/admin/inventory/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Thêm sản phẩm
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Search bar */}
@@ -88,10 +123,12 @@ export default async function InventoryPage({
               <tr>
                 <th className="px-4 py-3 font-medium">SKU</th>
                 <th className="px-4 py-3 font-medium">Tên sản phẩm</th>
+                <th className="px-4 py-3 font-medium">Nhóm hàng</th>
                 <th className="px-4 py-3 font-medium">Đơn vị</th>
                 <th className="px-4 py-3 font-medium text-right">Tồn kho</th>
                 <th className="px-4 py-3 font-medium text-right">Giá nhập</th>
                 <th className="px-4 py-3 font-medium text-right">Giá bán</th>
+                <th className="px-4 py-3 font-medium">Tích điểm</th>
                 <th className="px-4 py-3 font-medium">Trạng thái</th>
                 <th className="px-4 py-3 font-medium">Thao tác</th>
               </tr>
@@ -111,6 +148,15 @@ export default async function InventoryPage({
                       {product.sku}
                     </td>
                     <td className="px-4 py-3 text-gray-900">{product.name}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">
+                      {product.productGroup ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                          {product.productGroup.name}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{product.unit}</td>
                     <td className="px-4 py-3 text-right">
                       <span
@@ -130,6 +176,11 @@ export default async function InventoryPage({
                     </td>
                     <td className="px-4 py-3 text-right text-gray-700">
                       {formatCurrency(product.sellPrice)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs ${product.allowLoyalty ? "text-blue-600" : "text-gray-400"}`}>
+                        {product.allowLoyalty ? "✓" : "—"}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -165,6 +216,14 @@ export default async function InventoryPage({
           </table>
         </div>
       </div>
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalItems={total}
+        pageSize={PAGE_SIZE}
+        baseUrl="/admin/inventory"
+        searchParams={spParams}
+      />
     </div>
   );
 }

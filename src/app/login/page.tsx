@@ -33,7 +33,7 @@ export default function LoginPage() {
     }
 
     router.push("/admin");
-    router.refresh();
+    // router.refresh() removed — causes race condition with middleware session check
   }
 
   return (

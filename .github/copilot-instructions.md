@@ -129,10 +129,15 @@ src/
 | US-001 | Quản lý nhân viên | Completed |
 | US-002 | Chấm công | Verified |
 | US-003 | Ca làm việc | Verified |
-| US-004 | Tồn kho | In Progress |
-| US-005 | Sổ quỹ | In Progress |
-| US-006 | Lương | In Progress |
-| US-007 | Khách hàng | In Progress |
+| US-004 | Tồn kho | Verified |
+| US-005 | Sổ quỹ | Verified |
+| US-006 | Lương | Verified |
+| US-007 | Khách hàng | Verified |
+| US-008 | Nhập KH từ KiotViet xlsx | Verified (Sprint 2 — amendment loyaltyPointsDefault) |
+| US-009 | Tích điểm khách hàng | Verified (Sprint 2 — hiển thị 3 nhóm điểm) |
+| US-010 | Hàng hóa + nhóm hàng | Verified (Sprint 2 — import KiotViet + groups page) |
+| US-011 | Pagination cho bảng dữ liệu | Verified |
+| US-012 | Tích điểm thủ công + import từ báo cáo bán hàng KiotViet | Verified |
 
 ---
 

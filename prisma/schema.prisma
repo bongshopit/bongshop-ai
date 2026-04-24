@@ -121,21 +121,41 @@ model Attendance {
   @@map("attendances")
 }
 
+// ==================== HÀNG HÓA / NHÓM HÀNG (US-010) ====================
+
+model ProductGroup {
+  id              String    @id @default(cuid())
+  name            String    @unique
+  loyaltyCategory String    @default("DEFAULT") // "DEFAULT" | "SUA" | "TA_BIM"
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  products        Product[]
+
+  @@map("product_groups")
+}
+
 // ==================== TỒN KHO (US-004) ====================
 
 model Product {
-  id          String   @id @default(cuid())
-  sku         String   @unique
-  name        String
-  description String?
-  unit        String   @default("cái")
-  quantity    Int      @default(0)
-  costPrice   Decimal  @default(0) @db.Decimal(12, 2)
-  sellPrice   Decimal  @default(0) @db.Decimal(12, 2)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String        @id @default(cuid())
+  sku            String        @unique
+  name           String
+  description    String?
+  unit           String        @default("cái")
+  quantity       Int           @default(0)
+  costPrice      Decimal       @default(0) @db.Decimal(12, 2)
+  sellPrice      Decimal       @default(0) @db.Decimal(12, 2)
+  isActive       Boolean       @default(true)
+  productGroupId String?
+  brand          String?
+  imageUrl       String?
+  barcode        String?
+  allowLoyalty   Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
+  productGroup   ProductGroup? @relation(fields: [productGroupId], references: [id])
   stockMovements StockMovement[]
   orderItems     OrderItem[]
 
@@ -208,16 +228,22 @@ model Payroll {
 // ==================== KHÁCH HÀNG (US-007) ====================
 
 model Customer {
-  id          String   @id @default(cuid())
-  name        String
-  phone       String?  @unique
-  email       String?
-  address     String?
-  note        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                   String    @id @default(cuid())
+  name                 String
+  phone                String?   @unique
+  email                String?
+  address              String?
+  note                 String?
+  dateOfBirth          DateTime?
+  gender               String?   // "Nam" | "Nữ" | null
+  loyaltyPointsDefault Int       @default(0) // Mặc định + KiotViet import (US-008/US-010)
+  loyaltyPointsSua     Int       @default(0) // Nhóm sữa (US-009)
+  loyaltyPointsTaBim   Int       @default(0) // Nhóm tã bỉm (US-009)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   orders      Order[]
+  loyaltyLogs LoyaltyLog[]
 
   @@map("customers")
 }
@@ -249,4 +275,21 @@ model OrderItem {
   product     Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
+}
+
+// ==================== TÍCH ĐIỂM (US-009) ====================
+
+model LoyaltyLog {
+  id              String   @id @default(cuid())
+  customerId      String
+  loyaltyCategory String   // "DEFAULT" | "SUA" | "TA_BIM"
+  type            String   // "EARN" | "REDEEM" | "ADJUST"
+  points          Int      // dương = cộng, âm = trừ
+  reason          String?
+  createdBy       String
+  createdAt       DateTime @default(now())
+
+  customer        Customer @relation(fields: [customerId], references: [id])
+
+  @@map("loyalty_logs")
 }

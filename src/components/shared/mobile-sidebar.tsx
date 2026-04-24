@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard, Users, Clock, Calendar, Package, Wallet, Banknote, UserCheck } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, Clock, Calendar, Package, Wallet, Banknote, UserCheck, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +16,7 @@ const navItems = [
   { title: "Sổ quỹ", href: "/admin/cashbook", icon: Wallet },
   { title: "Lương", href: "/admin/payroll", icon: Banknote },
   { title: "Khách hàng", href: "/admin/customers", icon: UserCheck },
+  { title: "Import tích điểm", href: "/admin/loyalty/import", icon: Star },
 ];
 
 export function MobileSidebar() {

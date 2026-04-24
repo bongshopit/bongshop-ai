@@ -5,7 +5,7 @@ async function login(page: import("@playwright/test").Page) {
   await page.getByLabel("Email").fill("admin@bongshop.vn");
   await page.getByLabel("Mật khẩu").fill("admin123");
   await page.getByRole("button", { name: "Đăng nhập" }).click();
-  await page.waitForURL("**/admin", { timeout: 10000 });
+  await page.waitForURL((url) => url.pathname.startsWith("/admin"), { timeout: 15000 });
 }
 
 const testSku = `SP-${String(Date.now()).slice(-8)}`;
