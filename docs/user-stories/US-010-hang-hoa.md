@@ -307,4 +307,19 @@ for (const batch of chunks(validRows, 100)) {
 
 ---
 
+## Amendment — Sprint 3: Batch Import không giới hạn số dòng
+
+**Vấn đề:** File KiotViet thực tế có 21.474 sản phẩm > hard limit 20.000 → lỗi "File có quá nhiều dòng".
+
+**Thay đổi:**
+- Xóa client-side limit 20.001 rows trong `product-import-dialog.tsx`
+- Client chia `validRows` thành chunks 500 rows, gọi `importProducts` tuần tự per-batch
+- UI hiển thị tiến trình: `Đang import... (batch X/Y)` khi có nhiều hơn 1 batch
+- Server action: giảm per-call limit từ 20.000 → 1.000 rows (safety buffer phù hợp với chunk 500)
+
+**Kết quả:** Hỗ trợ import file không giới hạn số dòng, không quá tải DB.
+
+---
+
 ## Status: ✅ Verified (Sprint 2 — ProductGroup + import KiotViet + nhóm hàng page + 12 tests PASSED)
+> Sprint 3 amendment: batch import không giới hạn số dòng (chunk 500 rows/call)

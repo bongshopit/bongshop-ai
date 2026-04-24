@@ -113,11 +113,14 @@ function parseKiotVietProductRows(data: unknown[][]): ImportRowResult[] {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+const IMPORT_CHUNK_SIZE = 500;
+
 export function ProductImportDialog() {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<ImportRowResult[]>([]);
   const [fileName, setFileName] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const validRows = rows.filter((r) => r.status === "valid" && r.parsed);
@@ -143,11 +146,6 @@ export function ProductImportDialog() {
           defval: "",
         });
 
-        if (data.length > 20001) {
-          toast.error("File có quá nhiều dòng (tối đa 20.000 sản phẩm)");
-          return;
-        }
-
         const parsed = parseKiotVietProductRows(data as unknown[][]);
         if (parsed.length === 0) {
           toast.error('Không tìm thấy dữ liệu. Kiểm tra cột "Mã hàng" ở vị trí C.');
@@ -165,19 +163,35 @@ export function ProductImportDialog() {
     setOpen(false);
     setRows([]);
     setFileName("");
+    setBatchProgress(null);
     if (fileRef.current) fileRef.current.value = "";
   }
 
   function handleImport() {
     if (validRows.length === 0) return;
+    const totalBatches = Math.ceil(validRows.length / IMPORT_CHUNK_SIZE);
     startTransition(async () => {
-      const result = await importProducts(validRows.map((r) => r.parsed));
-      if ("error" in result) {
-        toast.error(result.error);
-        return;
+      let totalCreated = 0;
+      let totalUpdated = 0;
+      let totalSkipped = 0;
+
+      for (let i = 0; i < validRows.length; i += IMPORT_CHUNK_SIZE) {
+        const batchNum = Math.floor(i / IMPORT_CHUNK_SIZE) + 1;
+        setBatchProgress({ current: batchNum, total: totalBatches });
+
+        const chunk = validRows.slice(i, i + IMPORT_CHUNK_SIZE);
+        const result = await importProducts(chunk.map((r) => r.parsed));
+        if ("error" in result) {
+          toast.error(`Lỗi tại batch ${batchNum}: ${result.error}`);
+          return;
+        }
+        totalCreated += result.created;
+        totalUpdated += result.updated;
+        totalSkipped += result.skipped;
       }
+
       toast.success(
-        `Import thành công: ${result.created} mới, ${result.updated} cập nhật, ${result.skipped} bỏ qua`
+        `Import thành công: ${totalCreated} mới, ${totalUpdated} cập nhật, ${totalSkipped} bỏ qua`
       );
       handleClose();
     });
@@ -297,7 +311,11 @@ export function ProductImportDialog() {
             onClick={handleImport}
             disabled={validRows.length === 0 || isPending}
           >
-            {isPending ? "Đang import..." : `Import ${validRows.length} sản phẩm`}
+            {isPending
+              ? batchProgress && batchProgress.total > 1
+                ? `Đang import... (batch ${batchProgress.current}/${batchProgress.total})`
+                : "Đang import..."
+              : `Import ${validRows.length} sản phẩm`}
           </Button>
         </div>
       </div>
