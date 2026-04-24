@@ -157,12 +157,15 @@ function StatusBadge({ row }: { row: ImportRowResult }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+const IMPORT_CHUNK_SIZE = 500;
+
 export function CustomerImportDialog() {
   const [open, setOpen] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [rows, setRows] = useState<ImportRowResult[]>([]);
   const [totalRows, setTotalRows] = useState(0);
   const [isPending, startTransition] = useTransition();
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const validRows = rows.filter((r) => r.status === "valid");
@@ -218,11 +221,6 @@ export function CustomerImportDialog() {
           (row as unknown[]).some((cell) => String(cell).trim() !== "")
         );
 
-        if (dataRows.length > 5000) {
-          setFileError("File chứa quá nhiều dòng (tối đa 5000)");
-          return;
-        }
-
         const parsed = parseKiotVietRows(data as unknown[][]);
         setTotalRows(parsed.length);
         setRows(parsed);
@@ -235,16 +233,29 @@ export function CustomerImportDialog() {
 
   function handleImport() {
     const toSend = validRows.map((r) => r.parsed!);
+    const totalBatches = Math.ceil(toSend.length / IMPORT_CHUNK_SIZE);
     startTransition(async () => {
-      const result = await importCustomers(toSend);
-      if ("error" in result) {
-        toast.error(result.error);
-      } else {
-        toast.success(
-          `Đã nhập ${result.imported} khách hàng thành công. Bỏ qua ${result.skipped} do trùng SĐT.`
-        );
-        handleClose();
+      let totalImported = 0;
+      let totalSkipped = 0;
+
+      for (let i = 0; i < toSend.length; i += IMPORT_CHUNK_SIZE) {
+        const batchNum = Math.floor(i / IMPORT_CHUNK_SIZE) + 1;
+        setBatchProgress({ current: batchNum, total: totalBatches });
+
+        const chunk = toSend.slice(i, i + IMPORT_CHUNK_SIZE);
+        const result = await importCustomers(chunk);
+        if ("error" in result) {
+          toast.error(`Lỗi tại batch ${batchNum}: ${result.error}`);
+          return;
+        }
+        totalImported += result.imported;
+        totalSkipped += result.skipped;
       }
+
+      toast.success(
+        `Đã nhập ${totalImported} khách hàng thành công. Bỏ qua ${totalSkipped} do trùng SĐT.`
+      );
+      handleClose();
     });
   }
 
@@ -253,6 +264,7 @@ export function CustomerImportDialog() {
     setRows([]);
     setTotalRows(0);
     setFileError(null);
+    setBatchProgress(null);
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -395,7 +407,9 @@ export function CustomerImportDialog() {
             disabled={validRows.length === 0 || isPending}
           >
             {isPending
-              ? "Đang import..."
+              ? batchProgress && batchProgress.total > 1
+                ? `Đang import... (batch ${batchProgress.current}/${batchProgress.total})`
+                : "Đang import..."
               : `Import ${validRows.length} khách hàng`}
           </Button>
         </div>

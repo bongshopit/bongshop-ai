@@ -169,6 +169,10 @@ export async function confirmLoyaltyImport(
     return { error: "Không có dữ liệu hợp lệ để import" };
   }
 
+  if (validRows.length > 500) {
+    return { error: "Mỗi batch tối đa 500 khách hàng" };
+  }
+
   let importedCount = 0;
 
   try {

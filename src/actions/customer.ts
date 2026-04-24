@@ -117,8 +117,8 @@ export async function importCustomers(
   if (!Array.isArray(rows) || rows.length === 0) {
     return { error: "Không có dữ liệu để import" };
   }
-  if (rows.length > 5000) {
-    return { error: "Vượt quá 5000 dòng cho phép" };
+  if (rows.length > 1000) {
+    return { error: "Mỗi batch tối đa 1.000 dòng" };
   }
 
   // Server-side re-validate each row

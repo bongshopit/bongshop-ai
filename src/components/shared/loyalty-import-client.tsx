@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { confirmLoyaltyImport } from "@/actions/loyalty";
 import type { ParsePreviewResponse, CustomerPreviewRow } from "@/lib/validators/loyalty";
 
+const LOYALTY_CHUNK_SIZE = 200;
+
 export function LoyaltyImportClient() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string>("");
@@ -18,6 +20,7 @@ export function LoyaltyImportClient() {
     error?: string;
   } | null>(null);
   const [forceImport, setForceImport] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -74,14 +77,30 @@ export function LoyaltyImportClient() {
       invoiceIds: r.invoiceIds,
     }));
 
+    const totalBatches = Math.ceil(importRows.length / LOYALTY_CHUNK_SIZE);
+
     startConfirming(async () => {
-      const result = await confirmLoyaltyImport(importRows, fileName);
-      setConfirmResult(result);
-      if (!result?.error) {
-        setPreview(null);
-        if (fileRef.current) fileRef.current.value = "";
-        setFileName("");
+      setBatchProgress(null);
+      let totalImported = 0;
+
+      for (let i = 0; i < importRows.length; i += LOYALTY_CHUNK_SIZE) {
+        const batchNum = Math.floor(i / LOYALTY_CHUNK_SIZE) + 1;
+        setBatchProgress({ current: batchNum, total: totalBatches });
+
+        const chunk = importRows.slice(i, i + LOYALTY_CHUNK_SIZE);
+        const result = await confirmLoyaltyImport(chunk, fileName);
+        if (result?.error) {
+          setConfirmResult({ error: `Batch ${batchNum}: ${result.error}` });
+          return;
+        }
+        totalImported += result?.imported ?? 0;
       }
+
+      setConfirmResult({ imported: totalImported });
+      setBatchProgress(null);
+      setPreview(null);
+      if (fileRef.current) fileRef.current.value = "";
+      setFileName("");
     });
   }
 
@@ -344,14 +363,16 @@ export function LoyaltyImportClient() {
             <Button
               onClick={handleConfirm}
               disabled={
-                !canConfirm &&
-                !(forceImport && matchedRows.length > 0) ||
+                (!canConfirm &&
+                !(forceImport && matchedRows.length > 0)) ||
                 isConfirming
               }
               className="bg-blue-600 hover:bg-blue-700"
             >
               {isConfirming
-                ? "Đang xử lý..."
+                ? batchProgress && batchProgress.total > 1
+                  ? `Đang xử lý... (batch ${batchProgress.current}/${batchProgress.total})`
+                  : "Đang xử lý..."
                 : `Xác nhận import (${matchedRows.length} khách)`}
             </Button>
           </div>
