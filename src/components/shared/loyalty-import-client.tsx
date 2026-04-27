@@ -68,9 +68,11 @@ export function LoyaltyImportClient() {
   function handleConfirm() {
     if (!preview) return;
 
-    const matchedRows = preview.rows.filter((r) => r.matched);
-    const importRows = matchedRows.map((r) => ({
-      customerId: r.customerId!,
+    // Bao gồm tất cả rows: KH đã có (customerId != null) lẩn KH sẽ tạo mới (customerId = null)
+    const importRows = preview.rows.map((r) => ({
+      customerId: r.customerId,
+      phone: r.phone,
+      customerName: r.customerName,
       pointsDefault: r.pointsDefault,
       pointsSua: r.pointsSua,
       pointsTaBim: r.pointsTaBim,
@@ -105,9 +107,10 @@ export function LoyaltyImportClient() {
   }
 
   const matchedRows = preview?.rows.filter((r) => r.matched) ?? [];
+  const unmatchedRows = preview?.rows.filter((r) => !r.matched) ?? [];
   const hasDuplicates =
     (preview?.duplicateInvoices?.length ?? 0) > 0 && !forceImport;
-  const canConfirm = matchedRows.length > 0 && !hasDuplicates;
+  const canConfirm = (preview?.rows?.length ?? 0) > 0 && !hasDuplicates;
 
   return (
     <div className="space-y-6">
@@ -301,7 +304,7 @@ export function LoyaltyImportClient() {
                           {row.phone}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {row.matched && row.pointsDefault > 0 ? (
+                          {row.pointsDefault > 0 ? (
                             <span className="font-medium text-gray-900">
                               +{row.pointsDefault}
                             </span>
@@ -310,7 +313,7 @@ export function LoyaltyImportClient() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {row.matched && row.pointsSua > 0 ? (
+                          {row.pointsSua > 0 ? (
                             <span className="font-medium text-blue-600">
                               +{row.pointsSua}
                             </span>
@@ -319,7 +322,7 @@ export function LoyaltyImportClient() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {row.matched && row.pointsTaBim > 0 ? (
+                          {row.pointsTaBim > 0 ? (
                             <span className="font-medium text-purple-600">
                               +{row.pointsTaBim}
                             </span>
@@ -328,7 +331,7 @@ export function LoyaltyImportClient() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                          {row.matched
+                          {row.pointsDefault + row.pointsSua + row.pointsTaBim > 0
                             ? `+${row.pointsDefault + row.pointsSua + row.pointsTaBim}`
                             : "—"}
                         </td>
@@ -339,9 +342,9 @@ export function LoyaltyImportClient() {
                               Khớp
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                               <AlertCircle className="h-3 w-3" />
-                              Không tìm thấy
+                              Tạo mới
                             </span>
                           )}
                         </td>
@@ -356,24 +359,24 @@ export function LoyaltyImportClient() {
           {/* Confirm button */}
           <div className="flex items-center justify-between pt-2">
             <p className="text-sm text-gray-500">
-              {matchedRows.length > 0
-                ? `${matchedRows.length} khách hàng sẽ được cộng điểm`
-                : "Không có khách hàng nào được cộng điểm"}
+              {matchedRows.length > 0 || unmatchedRows.length > 0
+                ? `${matchedRows.length} khách cộng điểm${
+                    unmatchedRows.length > 0
+                      ? ` + ${unmatchedRows.length} khách sẽ được tạo mới`
+                      : ""
+                  }`
+                : "Không có dữ liệu để import"}
             </p>
             <Button
               onClick={handleConfirm}
-              disabled={
-                (!canConfirm &&
-                !(forceImport && matchedRows.length > 0)) ||
-                isConfirming
-              }
+              disabled={!canConfirm || isConfirming}
               className="bg-blue-600 hover:bg-blue-700"
             >
               {isConfirming
                 ? batchProgress && batchProgress.total > 1
                   ? `Đang xử lý... (batch ${batchProgress.current}/${batchProgress.total})`
                   : "Đang xử lý..."
-                : `Xác nhận import (${matchedRows.length} khách)`}
+                : `Xác nhận import (${matchedRows.length + unmatchedRows.length} khách)`}
             </Button>
           </div>
         </div>

@@ -138,6 +138,7 @@ src/
 | US-010 | Hàng hóa + nhóm hàng | Verified (Sprint 2 — import KiotViet + groups page) |
 | US-011 | Pagination cho bảng dữ liệu | Verified |
 | US-012 | Tích điểm thủ công + import từ báo cáo bán hàng KiotViet | Verified |
+| US-013 | Cài đặt tỉ lệ tích điểm (Theo tiền / Theo sản phẩm) | Verified |
 
 ---
 

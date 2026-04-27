@@ -27,11 +27,11 @@ test.describe("US-012: Tích điểm thủ công và import KiotViet", () => {
     await login(page);
   });
 
-  // ─── TC-1201: Sidebar có link Import tích điểm ────────────────────────────
-  test("TC-1201: Sidebar hiển thị link Import tích điểm", async ({ page }) => {
+  // ─── TC-1201: Sidebar có link Tích điểm ──────────────────────────────────
+  test("TC-1201: Sidebar hiển thị link Tích điểm", async ({ page }) => {
     await page.goto("/admin");
     await expect(
-      page.locator("nav a", { hasText: "Import tích điểm" })
+      page.locator("nav a", { hasText: "Tích điểm" })
     ).toBeVisible();
   });
 
@@ -263,5 +263,131 @@ test.describe("US-012: Tích điểm thủ công và import KiotViet", () => {
     await expect(
       page.getByText(/Không đủ điểm/)
     ).toBeVisible({ timeout: 5000 });
+  });
+
+  // ─── TC-1211 (US-013): Trang /admin/loyalty hiển thị đúng ────────────────
+  test("TC-1211: Trang /admin/loyalty hiển thị heading và 3 card cài đặt", async ({
+    page,
+  }) => {
+    await page.goto("/admin/loyalty");
+
+    await expect(page.locator("h1", { hasText: "Tích điểm" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Import KiotViet" })).toBeVisible();
+
+    // 3 card danh mục — dùng locator chính xác tránh strict mode violation
+    await expect(page.locator("p", { hasText: "Mặc định" }).first()).toBeVisible();
+    await expect(page.locator("p", { hasText: "Sữa" }).first()).toBeVisible();
+    await expect(page.locator("p", { hasText: "Tã bỉm" }).first()).toBeVisible();
+
+    // Có ít nhất 3 nút Chỉnh sửa
+    const editButtons = page.getByRole("button", { name: "Chỉnh sửa" });
+    await expect(editButtons.first()).toBeVisible();
+    expect(await editButtons.count()).toBeGreaterThanOrEqual(3);
+  });
+
+  // ─── TC-1212 (US-013): Cài đặt tỉ lệ Mặc định (Theo tiền) ───────────────
+  test("TC-1212: Chỉnh sửa tỉ lệ Mặc định → Theo tiền 50.000 VNĐ", async ({
+    page,
+  }) => {
+    await page.goto("/admin/loyalty");
+
+    // Click nút Chỉnh sửa đầu tiên (Mặc định)
+    await page.getByRole("button", { name: "Chỉnh sửa" }).first().click();
+
+    // Dialog hiển thị
+    await expect(page.getByText("Cài đặt tỉ lệ — Mặc định")).toBeVisible();
+
+    // Chọn Theo tiền, đặt 50000
+    await page.locator("input[name='rateType'][value='AMOUNT']").check();
+    await page.locator("input[name='amountPerPoint']").fill("50000");
+    await page.getByRole("button", { name: "Lưu cài đặt" }).click();
+
+    // Dialog đóng và success message hiện
+    await expect(page.getByText("Cài đặt tỉ lệ — Mặc định")).not.toBeVisible({ timeout: 8000 });
+    await expect(page.getByText("Đã lưu cài đặt").first()).toBeVisible({ timeout: 8000 });
+
+    // Reload để xác nhận dữ liệu đã được lưu vào DB
+    await page.reload();
+    await expect(page.getByText(/50\.000 VNĐ = 1 điểm/)).toBeVisible({ timeout: 8000 });
+
+    // Reset lại 10000
+    await page.getByRole("button", { name: "Chỉnh sửa" }).first().click();
+    await page.locator("input[name='rateType'][value='AMOUNT']").check();
+    await page.locator("input[name='amountPerPoint']").fill("10000");
+    await page.getByRole("button", { name: "Lưu cài đặt" }).click();
+    await expect(page.getByText("Cài đặt tỉ lệ — Mặc định")).not.toBeVisible({ timeout: 8000 });
+  });
+
+  // ─── TC-1213 (US-013): Cài đặt tỉ lệ Sữa → Theo sản phẩm 2 điểm ────────
+  test("TC-1213: Chỉnh sửa tỉ lệ Sữa → Theo sản phẩm 2 điểm", async ({
+    page,
+  }) => {
+    await page.goto("/admin/loyalty");
+
+    // Nút Chỉnh sửa thứ 2 (Sữa)
+    await page.getByRole("button", { name: "Chỉnh sửa" }).nth(1).click();
+
+    await expect(page.getByText("Cài đặt tỉ lệ — Sữa")).toBeVisible();
+
+    await page.locator("input[name='rateType'][value='PRODUCT']").check();
+    await page.locator("input[name='pointsPerProduct']").fill("2");
+    await page.getByRole("button", { name: "Lưu cài đặt" }).click();
+
+    // Dialog đóng và success message hiện
+    await expect(page.getByText("Cài đặt tỉ lệ — Sữa")).not.toBeVisible({ timeout: 8000 });
+    await expect(page.getByText("Đã lưu cài đặt").first()).toBeVisible({ timeout: 8000 });
+
+    // Reload để xác nhận dữ liệu đã lưu
+    await page.reload();
+    await expect(page.getByText(/1 sản phẩm = 2 điểm/)).toBeVisible({ timeout: 8000 });
+
+    // Reset lại 1 điểm
+    await page.getByRole("button", { name: "Chỉnh sửa" }).nth(1).click();
+    await page.locator("input[name='rateType'][value='PRODUCT']").check();
+    await page.locator("input[name='pointsPerProduct']").fill("1");
+    await page.getByRole("button", { name: "Lưu cài đặt" }).click();
+    await expect(page.getByText("Cài đặt tỉ lệ — Sữa")).not.toBeVisible({ timeout: 8000 });
+  });
+
+  // ─── TC-1214 (US-013): Validation amountPerPoint < 1000 ──────────────────
+  test("TC-1214: amountPerPoint < 1000 → validation error", async ({
+    page,
+  }) => {
+    await page.goto("/admin/loyalty");
+
+    await page.getByRole("button", { name: "Chỉnh sửa" }).first().click();
+    await expect(page.getByText("Cài đặt tỉ lệ — Mặc định")).toBeVisible();
+
+    await page.locator("input[name='rateType'][value='AMOUNT']").check();
+    // Input has min=1000, but we bypass HTML validation with JS
+    await page.locator("input[name='amountPerPoint']").fill("100");
+    // Remove min attribute to bypass HTML5 validation and test server-side
+    await page.locator("input[name='amountPerPoint']").evaluate(
+      (el: HTMLInputElement) => { el.min = ""; el.removeAttribute("min"); }
+    );
+    await page.getByRole("button", { name: "Lưu cài đặt" }).click();
+
+    await expect(
+      page.getByText("Số tiền tối thiểu là 1.000 VNĐ")
+    ).toBeVisible({ timeout: 8000 });
+
+    // Đóng dialog
+    await page.getByRole("button", { name: "Hủy" }).click();
+  });
+
+  // ─── TC-1215 (US-013): Nút Import KiotViet dẫn tới trang import ──────────
+  test("TC-1215: Nút Import KiotViet dẫn tới /admin/loyalty/import", async ({
+    page,
+  }) => {
+    await page.goto("/admin/loyalty");
+    await page.getByRole("link", { name: "Import KiotViet" }).click();
+    await expect(page).toHaveURL(/\/admin\/loyalty\/import/, { timeout: 8000 });
+    await expect(
+      page.locator("h1", { hasText: "Import tích điểm từ KiotViet" })
+    ).toBeVisible();
+
+    // Back link dẫn về /admin/loyalty
+    await page.getByText("Quay lại Tích điểm").click();
+    await expect(page).toHaveURL(/\/admin\/loyalty$/, { timeout: 8000 });
   });
 });

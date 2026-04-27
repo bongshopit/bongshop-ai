@@ -7,7 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { LoyaltyImportClient } from "@/components/shared/loyalty-import-client";
 
 export const metadata: Metadata = {
-  title: "Import tích điểm - BongShop",
+  title: "Import KiotViet - Tích điểm - BongShop",
   description: "Import điểm tích lũy từ file báo cáo bán hàng KiotViet",
 };
 
@@ -24,11 +24,11 @@ export default async function LoyaltyImportPage() {
     <div>
       <div className="mb-6">
         <Link
-          href="/admin/customers"
+          href="/admin/loyalty"
           className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
-          Quay lại khách hàng
+          Quay lại Tích điểm
         </Link>
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-100 rounded-lg">

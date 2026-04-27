@@ -78,6 +78,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     phone: string;
     customerName: string;
     sku: string;
+    quantity: number;
     amount: number;
   };
 
@@ -85,12 +86,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let noPhoneCount = 0;
 
   // Column indices (0-based) from file analysis:
-  // 1=Mã hóa đơn, 12=Tên KH, 14=Điện thoại, 49=Trạng thái, 51=Mã hàng, 64=Thành tiền
+  // 1=Mã hóa đơn, 12=Tên KH, 14=Điện thoại, 49=Trạng thái, 51=Mã hàng, 59=Số lượng, 64=Thành tiền
   const COL_INVOICE = 1;
   const COL_CUST_NAME = 12;
   const COL_PHONE = 14;
   const COL_STATUS = 49;
   const COL_SKU = 51;
+  const COL_QUANTITY = 59;
   const COL_AMOUNT = 64;
 
   for (let i = 1; i < rawData.length; i++) {
@@ -114,6 +116,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       phone,
       customerName: String(row[COL_CUST_NAME] ?? "").trim(),
       sku: String(row[COL_SKU] ?? "").trim(),
+      quantity: Math.max(1, Number(row[COL_QUANTITY] ?? 1)),
       amount,
     });
   }
@@ -138,7 +141,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const uniqueSkus = Array.from(new Set(items.map((i) => i.sku).filter(Boolean)));
   const allInvoiceIds = Array.from(new Set(items.map((i) => i.invoiceId).filter(Boolean)));
 
-  const [customers, products, existingLogs] = await Promise.all([
+  const [customers, products, existingLogs, loyaltySettings] = await Promise.all([
     prisma.customer.findMany({
       where: { phone: { in: uniquePhones } },
       select: { id: true, name: true, phone: true },
@@ -155,7 +158,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       where: { reason: { contains: "Import KiotViet" } },
       select: { reason: true },
     }),
+    prisma.loyaltySetting.findMany(),
   ]);
+
+  // Build settings map (fallback to defaults if not configured)
+  const DEFAULT_SETTINGS = {
+    DEFAULT: { rateType: "AMOUNT", amountPerPoint: 10000, pointsPerProduct: 1 },
+    SUA: { rateType: "PRODUCT", amountPerPoint: 10000, pointsPerProduct: 1 },
+    TA_BIM: { rateType: "PRODUCT", amountPerPoint: 10000, pointsPerProduct: 1 },
+  } as const;
+
+  type SettingKey = "DEFAULT" | "SUA" | "TA_BIM";
+  const settingsMap = new Map(loyaltySettings.map((s) => [s.loyaltyCategory, s]));
+
+  function calcPoints(category: SettingKey, amount: number, quantity: number): number {
+    const s = settingsMap.get(category) ?? DEFAULT_SETTINGS[category];
+    const rateType = s.rateType;
+    const amountPerPoint = Number((s as { amountPerPoint: number }).amountPerPoint);
+    const pointsPerProduct = Number((s as { pointsPerProduct: number | { toString(): string } }).pointsPerProduct);
+
+    if (rateType === "PRODUCT") {
+      return Math.floor(quantity * pointsPerProduct);
+    }
+    return Math.floor(amount / amountPerPoint);
+  }
 
   const customerMap = new Map(
     customers.map((c) => [c.phone!, c] as [string, (typeof customers)[number]])
@@ -179,12 +205,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   );
 
   // ─── Group by phone ────────────────────────────────────────────────────────
+  // Tích lũy amounts/quantities theo danh mục, tính điểm sau khi gom hết.
+  // DEFAULT amount = tổng eligible - SUA amount - TA_BIM amount
   type PhoneGroup = {
     phone: string;
     customerName: string;
-    pointsDefault: number;
-    pointsSua: number;
-    pointsTaBim: number;
+    amountDefault: number;  // tổng tiền mặt hàng DEFAULT-category
+    amountSua: number;      // tổng tiền mặt hàng SUA-category
+    amountTaBim: number;    // tổng tiền mặt hàng TA_BIM-category
+    qtySua: number;         // tổng số lượng SUA
+    qtyTaBim: number;       // tổng số lượng TA_BIM
     invoiceIds: Set<string>;
   };
 
@@ -195,9 +225,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       groups.set(item.phone, {
         phone: item.phone,
         customerName: item.customerName,
-        pointsDefault: 0,
-        pointsSua: 0,
-        pointsTaBim: 0,
+        amountDefault: 0,
+        amountSua: 0,
+        amountTaBim: 0,
+        qtySua: 0,
+        qtyTaBim: 0,
         invoiceIds: new Set(),
       });
     }
@@ -207,13 +239,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const product = productMap.get(item.sku);
     if (product && !product.allowLoyalty) continue;
 
-    const category = product?.productGroup?.loyaltyCategory ?? "DEFAULT";
-    const pts = Math.floor(item.amount / 10000);
-    if (pts <= 0) continue;
+    const category = (product?.productGroup?.loyaltyCategory ?? "DEFAULT") as SettingKey;
 
-    if (category === "SUA") group.pointsSua += pts;
-    else if (category === "TA_BIM") group.pointsTaBim += pts;
-    else group.pointsDefault += pts;
+    // Tích lũy theo danh mục: SUA/TA_BIM theo số lượng, DEFAULT theo tiền
+    if (category === "SUA") {
+      group.amountSua += item.amount;
+      group.qtySua += item.quantity;
+    } else if (category === "TA_BIM") {
+      group.amountTaBim += item.amount;
+      group.qtyTaBim += item.quantity;
+    } else {
+      // DEFAULT: tích lũy tiền (sau sẽ trừ SUA + TA_BIM nếu dùng tổng hóa đơn)
+      group.amountDefault += item.amount;
+    }
   }
 
   // ─── Build response ────────────────────────────────────────────────────────
@@ -226,22 +264,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const customer = customerMap.get(group.phone) ?? null;
     const matched = customer !== null;
 
-    if (matched) {
-      matchedCount++;
-      totalPoints +=
-        group.pointsDefault + group.pointsSua + group.pointsTaBim;
-    } else {
-      unmatchedCount++;
-    }
+    // Tính điểm sau khi đã tích lũy đủ amounts/quantities:
+    // - SUA/TA_BIM: theo số lượng (PRODUCT rate)
+    // - DEFAULT: theo tổng tiền hàng DEFAULT (đã không bao gồm SUA + TA_BIM)
+    const pointsSua = calcPoints("SUA", 0, group.qtySua);
+    const pointsTaBim = calcPoints("TA_BIM", 0, group.qtyTaBim);
+    const pointsDefault = calcPoints("DEFAULT", group.amountDefault, 0);
+
+    // Tất cả KH (kể cả chưa có trong DB) đều được tích điểm → tính tổng cho stats
+    totalPoints += pointsDefault + pointsSua + pointsTaBim;
+
+    if (matched) matchedCount++;
+    else unmatchedCount++;
 
     rows.push({
       phone: group.phone,
       customerName: group.customerName,
       customerId: customer?.id ?? null,
       customerDbName: customer?.name ?? null,
-      pointsDefault: group.pointsDefault,
-      pointsSua: group.pointsSua,
-      pointsTaBim: group.pointsTaBim,
+      pointsDefault,
+      pointsSua,
+      pointsTaBim,
       invoiceIds: Array.from(group.invoiceIds),
       matched,
     });

@@ -16,7 +16,7 @@ const navItems = [
   { title: "Sổ quỹ", href: "/admin/cashbook", icon: Wallet },
   { title: "Lương", href: "/admin/payroll", icon: Banknote },
   { title: "Khách hàng", href: "/admin/customers", icon: UserCheck },
-  { title: "Import tích điểm", href: "/admin/loyalty/import", icon: Star },
+  { title: "Tích điểm", href: "/admin/loyalty", icon: Star },
 ];
 
 export function MobileSidebar() {

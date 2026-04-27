@@ -71,11 +71,45 @@ export type ParsePreviewResponse = {
 };
 
 export const confirmImportRowSchema = z.object({
-  customerId: z.string().min(1),
+  customerId: z.string().min(1).nullable(),
+  phone: z.string().min(1),
+  customerName: z.string().min(1),
   pointsDefault: z.number().int().min(0),
   pointsSua: z.number().int().min(0),
   pointsTaBim: z.number().int().min(0),
   invoiceIds: z.array(z.string()),
 });
+
+// ─── Loyalty Settings (US-013) ────────────────────────────────────────────────
+
+export const RATE_TYPES = ["AMOUNT", "PRODUCT"] as const;
+export type RateType = (typeof RATE_TYPES)[number];
+
+export const RATE_TYPE_LABELS: Record<RateType, string> = {
+  AMOUNT: "Theo tiền",
+  PRODUCT: "Theo sản phẩm",
+};
+
+export const loyaltySettingSchema = z.object({
+  loyaltyCategory: z.enum(LOYALTY_CATEGORIES, { required_error: "Chọn danh mục" }),
+  rateType: z.enum(RATE_TYPES, { required_error: "Chọn loại tỉ lệ" }),
+  amountPerPoint: z.coerce
+    .number()
+    .int("Phải là số nguyên")
+    .min(1000, "Số tiền tối thiểu là 1.000 VNĐ"),
+  pointsPerProduct: z.coerce
+    .number()
+    .positive("Số điểm phải lớn hơn 0"),
+});
+
+export type LoyaltySettingInput = z.infer<typeof loyaltySettingSchema>;
+
+export type LoyaltySettingData = {
+  id: string;
+  loyaltyCategory: LoyaltyCategory;
+  rateType: RateType;
+  amountPerPoint: number;
+  pointsPerProduct: number;
+};
 
 export type ConfirmImportRow = z.infer<typeof confirmImportRowSchema>;

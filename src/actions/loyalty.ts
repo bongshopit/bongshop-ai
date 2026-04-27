@@ -8,6 +8,7 @@ import {
   addLoyaltyPointsSchema,
   adjustLoyaltyPointsSchema,
   confirmImportRowSchema,
+  loyaltySettingSchema,
   CATEGORY_LABELS,
   CATEGORY_FIELD_MAP,
   type LoyaltyCategory,
@@ -190,8 +191,20 @@ export async function confirmLoyaltyImport(
 
         if (!hasDefault && !hasSua && !hasTaBim) continue;
 
+        // Nếu KH chưa có trong DB → tạo mới (upsert để tránh race condition)
+        let resolvedCustomerId = row.customerId;
+        if (!resolvedCustomerId) {
+          const newCustomer = await tx.customer.upsert({
+            where: { phone: row.phone },
+            create: { name: row.customerName, phone: row.phone },
+            update: {},
+            select: { id: true },
+          });
+          resolvedCustomerId = newCustomer.id;
+        }
+
         await tx.customer.update({
-          where: { id: row.customerId },
+          where: { id: resolvedCustomerId },
           data: {
             ...(hasDefault
               ? { loyaltyPointsDefault: { increment: row.pointsDefault } }
@@ -213,7 +226,7 @@ export async function confirmLoyaltyImport(
         for (const log of logs) {
           await tx.loyaltyLog.create({
             data: {
-              customerId: row.customerId,
+              customerId: resolvedCustomerId,
               loyaltyCategory: log.category,
               type: "EARN",
               points: log.points,
@@ -234,4 +247,37 @@ export async function confirmLoyaltyImport(
 
   revalidatePath("/admin/customers");
   return { imported: importedCount };
+}
+
+// ─── Cập nhật cài đặt tỉ lệ tích điểm (US-013) ──────────────────────────────
+
+export async function updateLoyaltySetting(
+  formData: FormData
+): Promise<ActionState> {
+  const session = await getServerSession(authOptions);
+  if (!session || !requireManagerOrAdmin(session.user.role)) {
+    return { error: "Không có quyền thực hiện thao tác này" };
+  }
+
+  const parsed = loyaltySettingSchema.safeParse({
+    loyaltyCategory: formData.get("loyaltyCategory"),
+    rateType: formData.get("rateType"),
+    amountPerPoint: formData.get("amountPerPoint"),
+    pointsPerProduct: formData.get("pointsPerProduct"),
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const { loyaltyCategory, rateType, amountPerPoint, pointsPerProduct } =
+    parsed.data;
+
+  await prisma.loyaltySetting.upsert({
+    where: { loyaltyCategory },
+    update: { rateType, amountPerPoint, pointsPerProduct },
+    create: { loyaltyCategory, rateType, amountPerPoint, pointsPerProduct },
+  });
+
+  revalidatePath("/admin/loyalty");
+  return null;
 }

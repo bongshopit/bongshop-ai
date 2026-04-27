@@ -66,6 +66,20 @@ async function main() {
     skipDuplicates: true,
   });
 
+  // Seed default loyalty settings (US-013)
+  const loyaltyDefaults = [
+    { loyaltyCategory: "DEFAULT", rateType: "AMOUNT", amountPerPoint: 10000, pointsPerProduct: 1 },
+    { loyaltyCategory: "SUA", rateType: "PRODUCT", amountPerPoint: 10000, pointsPerProduct: 1 },
+    { loyaltyCategory: "TA_BIM", rateType: "PRODUCT", amountPerPoint: 10000, pointsPerProduct: 1 },
+  ];
+  for (const setting of loyaltyDefaults) {
+    await prisma.loyaltySetting.upsert({
+      where: { loyaltyCategory: setting.loyaltyCategory },
+      update: {},
+      create: setting,
+    });
+  }
+
   console.log("Seed completed:", { admin: admin.email, manager: manager.email });
 }
 

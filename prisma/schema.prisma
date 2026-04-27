@@ -277,6 +277,19 @@ model OrderItem {
   @@map("order_items")
 }
 
+// ==================== CÀI ĐẶT TỈ LỆ TÍCH ĐIỂM (US-013) ====================
+
+model LoyaltySetting {
+  id               String   @id @default(cuid())
+  loyaltyCategory  String   @unique // "DEFAULT" | "SUA" | "TA_BIM"
+  rateType         String   @default("AMOUNT") // "AMOUNT" | "PRODUCT"
+  amountPerPoint   Int      @default(10000) // VNĐ để đạt 1 điểm (rateType=AMOUNT)
+  pointsPerProduct Decimal  @default(1) @db.Decimal(10, 4) // điểm / 1 sản phẩm (rateType=PRODUCT)
+  updatedAt        DateTime @updatedAt
+
+  @@map("loyalty_settings")
+}
+
 // ==================== TÍCH ĐIỂM (US-009) ====================
 
 model LoyaltyLog {
