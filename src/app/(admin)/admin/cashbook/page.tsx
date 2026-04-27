@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { CashTransactionForm } from "@/components/shared/cash-transaction-form";
 import { Pagination } from "@/components/shared/pagination";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Sổ quỹ - BongShop",
   description: "Quản lý sổ quỹ thu chi BongShop",

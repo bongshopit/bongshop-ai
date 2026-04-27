@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AttendanceCheckinPanel } from "@/components/shared/attendance-checkin-panel";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Chấm công - BongShop",
   description: "Quản lý chấm công BongShop",

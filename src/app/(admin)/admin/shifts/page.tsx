@@ -2,6 +2,8 @@
 import { prisma } from "@/lib/prisma";
 import { ShiftsManager } from "@/components/shared/shifts-manager";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Ca lam viec - BongShop",
   description: "Quan ly ca lam viec BongShop",

@@ -8,6 +8,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export const dynamic = "force-dynamic";
 import { AddLoyaltyPointsDialog } from "@/components/shared/add-loyalty-points-dialog";
 import { AdjustLoyaltyPointsDialog } from "@/components/shared/adjust-loyalty-points-dialog";
 import { LoyaltyLogTable } from "@/components/shared/loyalty-log-table";

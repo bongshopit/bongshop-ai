@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { ProductGroupCategoryForm } from "@/components/shared/product-group-category-form";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Nhóm hàng - BongShop",
   description: "Quản lý nhóm hàng và phân loại tích điểm",

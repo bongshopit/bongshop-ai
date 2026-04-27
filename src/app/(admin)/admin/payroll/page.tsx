@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { CalculatePayrollForm } from "@/components/shared/calculate-payroll-form";
 import { PayrollStatusButton } from "@/components/shared/payroll-status-button";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Lương - BongShop",
   description: "Quản lý bảng lương nhân viên BongShop",

@@ -11,6 +11,8 @@ import { CustomerSearch } from "@/components/shared/customer-search";
 import { CustomerImportDialog } from "@/components/shared/customer-import-dialog";
 import { Pagination } from "@/components/shared/pagination";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Khách hàng - BongShop",
   description: "Quản lý khách hàng BongShop",

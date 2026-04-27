@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 import { CustomerForm } from "@/components/shared/customer-form";
 import { updateCustomer } from "@/actions/customer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

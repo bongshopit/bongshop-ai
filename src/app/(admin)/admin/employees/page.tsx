@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { EmployeeSearch } from "@/components/shared/employee-search";
 import { Pagination } from "@/components/shared/pagination";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Nhân viên - BongShop",
   description: "Quản lý nhân viên BongShop",

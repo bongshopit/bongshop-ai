@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Star, Upload } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 import { LoyaltySettingsForm } from "@/components/shared/loyalty-settings-form";
 import {
   CATEGORY_LABELS,

@@ -5,6 +5,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
+
+export const dynamic = "force-dynamic";
 import { Pagination } from "@/components/shared/pagination";
 import { ProductImportDialog } from "@/components/shared/product-import-dialog";
 

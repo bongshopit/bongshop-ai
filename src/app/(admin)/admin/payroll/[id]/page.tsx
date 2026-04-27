@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 import { PayrollStatusButton } from "@/components/shared/payroll-status-button";
 
 interface Props {
