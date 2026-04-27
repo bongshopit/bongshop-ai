@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import * as xlsx from "xlsx";
 import type { ParsePreviewResponse, CustomerPreviewRow } from "@/lib/validators/loyalty";
 
+export const dynamic = "force-dynamic";
+
 function normalizePhone(raw: unknown): string | null {
   if (raw == null) return null;
   const cleaned = String(raw).trim().replace(/\s+/g, "").replace(/^\+84/, "0");
