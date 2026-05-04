@@ -1,8 +1,10 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { CalculatePayrollForm } from "@/components/shared/calculate-payroll-form";
 import { PayrollStatusButton } from "@/components/shared/payroll-status-button";
+import { Pagination } from "@/components/shared/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -11,9 +13,12 @@ export const metadata: Metadata = {
   description: "Quản lý bảng lương nhân viên BongShop",
 };
 
+const PAGE_SIZE = 25;
+
 interface SearchParams {
   month?: string;
   year?: string;
+  page?: string;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -35,21 +40,33 @@ function formatCurrency(value: number | { toString(): string }) {
   });
 }
 
-async function getPayrolls(month: number, year: number) {
-  return prisma.payroll.findMany({
-    where: { month, year },
-    include: {
-      employee: {
-        select: {
-          employeeCode: true,
-          firstName: true,
-          lastName: true,
-          department: true,
+async function getPayrolls(month: number, year: number, page: number) {
+  const where: Prisma.PayrollWhereInput = { month, year };
+
+  const [data, total] = await Promise.all([
+    prisma.payroll.findMany({
+      where,
+      take: PAGE_SIZE,
+      skip: (page - 1) * PAGE_SIZE,
+      include: {
+        employee: {
+          select: {
+            employeeCode: true,
+            firstName: true,
+            lastName: true,
+            department: true,
+          },
         },
       },
-    },
-    orderBy: [{ status: "asc" }, { employee: { employeeCode: "asc" } }],
-  });
+      orderBy: [{ status: "asc" }, { employee: { employeeCode: "asc" } }],
+    }),
+    prisma.payroll.count({ where }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const validPage = Math.min(page, totalPages);
+
+  return { data, total, page: validPage, totalPages };
 }
 
 export default async function PayrollPage({
@@ -60,8 +77,9 @@ export default async function PayrollPage({
   const now = new Date();
   const month = parseInt(searchParams.month ?? String(now.getMonth() + 1), 10);
   const year = parseInt(searchParams.year ?? String(now.getFullYear()), 10);
+  const pageNum = Math.max(1, parseInt(searchParams.page ?? "1") || 1);
 
-  const payrolls = await getPayrolls(month, year);
+  const { data: payrolls, total, page, totalPages } = await getPayrolls(month, year, pageNum);
 
   const totalGross = payrolls.reduce((s, p) => s + Number(p.grossSalary), 0);
   const totalNet = payrolls.reduce((s, p) => s + Number(p.netSalary), 0);
@@ -201,6 +219,17 @@ export default async function PayrollPage({
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalItems={total}
+          pageSize={PAGE_SIZE}
+          baseUrl="/admin/payroll"
+          searchParams={{
+            month: String(month),
+            year: String(year),
+          }}
+        />
       </div>
     </div>
   );

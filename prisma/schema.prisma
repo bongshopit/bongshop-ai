@@ -69,6 +69,8 @@ model Employee {
   shiftAssignments ShiftAssignment[]
   payrolls      Payroll[]
 
+  @@index([isActive])
+  @@index([department])
   @@map("employees")
 }
 
@@ -85,6 +87,7 @@ model Shift {
 
   assignments ShiftAssignment[]
 
+  @@index([isActive])
   @@map("shifts")
 }
 
@@ -118,6 +121,8 @@ model Attendance {
   employee    Employee  @relation(fields: [employeeId], references: [id])
 
   @@unique([employeeId, date])
+  @@index([date])
+  @@index([employeeId, date])
   @@map("attendances")
 }
 
@@ -159,6 +164,7 @@ model Product {
   stockMovements StockMovement[]
   orderItems     OrderItem[]
 
+  @@index([isActive])
   @@map("products")
 }
 
@@ -199,6 +205,8 @@ model CashTransaction {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
+  @@index([date])
+  @@index([type])
   @@map("cash_transactions")
 }
 
@@ -222,6 +230,7 @@ model Payroll {
   employee      Employee @relation(fields: [employeeId], references: [id])
 
   @@unique([employeeId, month, year])
+  @@index([month, year])
   @@map("payrolls")
 }
 
@@ -245,6 +254,7 @@ model Customer {
   orders      Order[]
   loyaltyLogs LoyaltyLog[]
 
+  @@index([email])
   @@map("customers")
 }
 
@@ -260,6 +270,8 @@ model Order {
   customer    Customer    @relation(fields: [customerId], references: [id])
   items       OrderItem[]
 
+  @@index([status])
+  @@index([customerId])
   @@map("orders")
 }
 
@@ -304,5 +316,7 @@ model LoyaltyLog {
 
   customer        Customer @relation(fields: [customerId], references: [id])
 
+  @@index([customerId])
+  @@index([createdAt])
   @@map("loyalty_logs")
 }

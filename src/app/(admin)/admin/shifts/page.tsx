@@ -30,6 +30,7 @@ export default async function ShiftsPage({
     }),
     prisma.shiftAssignment.findMany({
       where: { date: dateFilter },
+      take: 200,
       include: {
         employee: {
           select: {

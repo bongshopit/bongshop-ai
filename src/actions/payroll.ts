@@ -33,67 +33,56 @@ export async function calculatePayroll(formData: FormData): Promise<ActionState>
     },
   });
 
-  let count = 0;
-
-  for (const emp of employees) {
-    // BR-011: bỏ qua phiếu đã PAID
-    const existing = await prisma.payroll.findUnique({
-      where: { employeeId_month_year: { employeeId: emp.id, month, year } },
-      select: { status: true },
-    });
-
-    if (existing?.status === "PAID") continue;
-
-    // Tổng giờ làm trong tháng từ Attendance
-    const agg = await prisma.attendance.aggregate({
+  // Batch fetch: lấy toàn bộ payroll hiện có + tổng giờ chấm công song song
+  const [existingPayrolls, attendanceAggs] = await Promise.all([
+    prisma.payroll.findMany({
       where: {
-        employeeId: emp.id,
+        employeeId: { in: employees.map((e) => e.id) },
+        month,
+        year,
+      },
+      select: { employeeId: true, status: true },
+    }),
+    prisma.attendance.groupBy({
+      by: ["employeeId"],
+      where: {
+        employeeId: { in: employees.map((e) => e.id) },
         date: { gte: firstDay, lte: lastDay },
         totalHours: { not: null },
       },
       _sum: { totalHours: true },
-    });
+    }),
+  ]);
 
-    const totalHours = Number(agg._sum.totalHours ?? 0);
-    const hourlyRate = Number(emp.hourlyRate);
-    const allowance = Number(emp.allowance);
-    const deduction = 0;
+  const paidSet = new Set(
+    existingPayrolls.filter((p) => p.status === "PAID").map((p) => p.employeeId)
+  );
+  const hoursMap = new Map(
+    attendanceAggs.map((a) => [a.employeeId, Number(a._sum.totalHours ?? 0)])
+  );
 
-    // BR-008: gross = totalHours × hourlyRate
-    const grossSalary = totalHours * hourlyRate;
-    // BR-009: net = gross + allowance - deduction
-    const netSalary = grossSalary + allowance - deduction;
+  // Chạy tất cả upsert song song với Promise.all
+  const results = await Promise.all(
+    employees
+      .filter((emp) => !paidSet.has(emp.id))
+      .map((emp) => {
+        const totalHours = hoursMap.get(emp.id) ?? 0;
+        const hourlyRate = Number(emp.hourlyRate);
+        const allowance = Number(emp.allowance);
+        const deduction = 0;
+        const grossSalary = totalHours * hourlyRate;
+        const netSalary = grossSalary + allowance - deduction;
 
-    await prisma.payroll.upsert({
-      where: { employeeId_month_year: { employeeId: emp.id, month, year } },
-      update: {
-        totalHours,
-        hourlyRate,
-        allowance,
-        deduction,
-        grossSalary,
-        netSalary,
-        status: "DRAFT",
-      },
-      create: {
-        employeeId: emp.id,
-        month,
-        year,
-        totalHours,
-        hourlyRate,
-        allowance,
-        deduction,
-        grossSalary,
-        netSalary,
-        status: "DRAFT",
-      },
-    });
-
-    count++;
-  }
+        return prisma.payroll.upsert({
+          where: { employeeId_month_year: { employeeId: emp.id, month, year } },
+          update: { totalHours, hourlyRate, allowance, deduction, grossSalary, netSalary, status: "DRAFT" },
+          create: { employeeId: emp.id, month, year, totalHours, hourlyRate, allowance, deduction, grossSalary, netSalary, status: "DRAFT" },
+        });
+      })
+  );
 
   revalidatePath("/admin/payroll");
-  return { count };
+  return { count: results.length };
 }
 
 // AC-6.3: Xác nhận phiếu lương DRAFT → CONFIRMED

@@ -42,7 +42,16 @@ async function getCustomers(params: SearchParams) {
       take: PAGE_SIZE,
       skip: (page - 1) * PAGE_SIZE,
       orderBy: { createdAt: "desc" },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        address: true,
+        loyaltyPointsDefault: true,
+        loyaltyPointsSua: true,
+        loyaltyPointsTaBim: true,
+        createdAt: true,
         _count: { select: { orders: true } },
         orders: {
           where: { status: "COMPLETED" },

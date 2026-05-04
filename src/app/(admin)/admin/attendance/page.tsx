@@ -2,7 +2,9 @@ import { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { AttendanceCheckinPanel } from "@/components/shared/attendance-checkin-panel";
+import { Pagination } from "@/components/shared/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -11,14 +13,18 @@ export const metadata: Metadata = {
   description: "Quản lý chấm công BongShop",
 };
 
+const PAGE_SIZE = 50;
+
 interface SearchParams {
   date?: string;
   month?: string;
   employeeId?: string;
+  page?: string;
 }
 
 async function getAttendances(params: SearchParams) {
-  const where: Record<string, unknown> = {};
+  const page = Math.max(1, parseInt(params.page ?? "1") || 1);
+  const where: Prisma.AttendanceWhereInput = {};
 
   if (params.date) {
     const d = new Date(params.date);
@@ -43,21 +49,31 @@ async function getAttendances(params: SearchParams) {
     where.employeeId = params.employeeId;
   }
 
-  return prisma.attendance.findMany({
-    where,
-    include: {
-      employee: {
-        select: {
-          id: true,
-          employeeCode: true,
-          firstName: true,
-          lastName: true,
-          department: true,
+  const [data, total] = await Promise.all([
+    prisma.attendance.findMany({
+      where,
+      take: PAGE_SIZE,
+      skip: (page - 1) * PAGE_SIZE,
+      include: {
+        employee: {
+          select: {
+            id: true,
+            employeeCode: true,
+            firstName: true,
+            lastName: true,
+            department: true,
+          },
         },
       },
-    },
-    orderBy: [{ date: "desc" }, { checkIn: "asc" }],
-  });
+      orderBy: [{ date: "desc" }, { checkIn: "asc" }],
+    }),
+    prisma.attendance.count({ where }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const validPage = Math.min(page, totalPages);
+
+  return { data, total, page: validPage, totalPages };
 }
 
 function formatTime(date: Date | null) {
@@ -106,7 +122,7 @@ export default async function AttendancePage({
     : null;
 
   // Lấy danh sách chấm công
-  const [attendances, employees] = await Promise.all([
+  const [{ data: attendances, total, page, totalPages }, employees] = await Promise.all([
     getAttendances(searchParams),
     prisma.employee.findMany({
       where: { isActive: true },
@@ -118,6 +134,11 @@ export default async function AttendancePage({
   const currentMonth =
     searchParams.month ||
     `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+
+  const spParams: Record<string, string> = {};
+  if (searchParams.month) spParams.month = searchParams.month;
+  if (searchParams.date) spParams.date = searchParams.date;
+  if (searchParams.employeeId) spParams.employeeId = searchParams.employeeId;
 
   return (
     <div>
@@ -263,9 +284,14 @@ export default async function AttendancePage({
             </tbody>
           </table>
         </div>
-        <div className="px-4 py-3 bg-gray-50 border-t text-xs text-gray-500">
-          Tổng: {attendances.length} bản ghi
-        </div>
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalItems={total}
+          pageSize={PAGE_SIZE}
+          baseUrl="/admin/attendance"
+          searchParams={spParams}
+        />
       </div>
     </div>
   );

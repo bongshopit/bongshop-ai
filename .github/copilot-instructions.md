@@ -139,6 +139,7 @@ src/
 | US-011 | Pagination cho bảng dữ liệu | Verified |
 | US-012 | Tích điểm thủ công + import từ báo cáo bán hàng KiotViet | Verified |
 | US-013 | Cài đặt tỉ lệ tích điểm (Theo tiền / Theo sản phẩm) | Verified |
+| US-014 | Sửa lỗi Pagination & Cải thiện Hiệu năng Webapp | Verified |
 
 ---
 
