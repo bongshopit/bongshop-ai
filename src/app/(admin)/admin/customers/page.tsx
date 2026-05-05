@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -11,6 +11,7 @@ import { CustomerSearch } from "@/components/shared/customer-search";
 import { CustomerImportDialog } from "@/components/shared/customer-import-dialog";
 import { Pagination } from "@/components/shared/pagination";
 import { TableSkeleton } from "@/components/shared/table-skeleton";
+import { DeleteAllCustomersButton } from "@/components/shared/delete-all-customers-button";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ async function getCustomers(params: SearchParams) {
     ];
   }
 
-  const [data, total] = await Promise.all([
+  const [data, total, totalAll] = await Promise.all([
     prisma.customer.findMany({
       where,
       take: PAGE_SIZE,
@@ -61,12 +62,13 @@ async function getCustomers(params: SearchParams) {
       },
     }),
     prisma.customer.count({ where }),
+    prisma.customer.count(),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const validPage = Math.min(page, totalPages);
 
-  return { data, total, page: validPage, totalPages };
+  return { data, total, totalAll, page: validPage, totalPages };
 }
 
 async function CustomersTable({
@@ -74,18 +76,40 @@ async function CustomersTable({
 }: {
   searchParams: SearchParams;
 }) {
-  const [{ data: customers, total, page, totalPages }, session] = await Promise.all([
+  const [{ data: customers, total, totalAll, page, totalPages }, session] = await Promise.all([
     getCustomers(searchParams),
     getServerSession(authOptions),
   ]);
   const canImport =
     session?.user?.role === "MANAGER" || session?.user?.role === "ADMIN";
-  const spParams = { q: searchParams.q } as Record<string, string>;
+  // Filter out undefined/empty values to avoid "undefined" appearing in URL params
+  const spParams = Object.fromEntries(
+    Object.entries({ q: searchParams.q }).filter(
+      ([, v]) => v !== undefined && v !== ""
+    )
+  ) as Record<string, string>;
+  const isFiltered = Boolean(searchParams.q);
 
   return (
     <>
       {canImport && <CustomerImportDialog />}
-      <div className="mt-4 rounded-lg border bg-white overflow-hidden">
+      {/* Tổng số khách hàng */}
+      <div className="mt-3 mb-3 flex items-center gap-4 text-sm text-gray-600">
+        <span className="flex items-center gap-1.5">
+          <Users className="h-4 w-4 text-gray-400" />
+          Tổng khách:{" "}
+          <span className="font-semibold text-gray-900">
+            {totalAll.toLocaleString("vi-VN")}
+          </span>{" "}
+          khách hàng
+        </span>
+        {isFiltered && total !== totalAll && (
+          <span className="text-blue-600">
+            ({total.toLocaleString("vi-VN")} kết quả lọc)
+          </span>
+        )}
+      </div>
+      <div className="rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
@@ -187,12 +211,15 @@ export default function CustomersPage({
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Quản lý khách hàng</h1>
-        <Button asChild>
-          <Link href="/admin/customers/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Thêm khách hàng
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <DeleteAllCustomersButton />
+          <Button asChild>
+            <Link href="/admin/customers/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Thêm khách hàng
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Suspense fallback={<div className="h-10 w-80 bg-gray-200 rounded animate-pulse" />}>

@@ -157,7 +157,13 @@ function StatusBadge({ row }: { row: ImportRowResult }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-const IMPORT_CHUNK_SIZE = 500;
+const IMPORT_CHUNK_SIZE = 1000;
+
+interface ImportProgress {
+  done: number;
+  total: number;
+  startedAt: number;
+}
 
 export function CustomerImportDialog() {
   const [open, setOpen] = useState(false);
@@ -165,13 +171,13 @@ export function CustomerImportDialog() {
   const [rows, setRows] = useState<ImportRowResult[]>([]);
   const [totalRows, setTotalRows] = useState(0);
   const [isPending, startTransition] = useTransition();
-  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+  const [progress, setProgress] = useState<ImportProgress | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const validRows = rows.filter((r) => r.status === "valid");
   const errorRows = rows.filter((r) => r.status === "error");
   const duplicateRows = rows.filter((r) => r.status === "duplicate_in_file");
-  const previewRows = rows.slice(0, 20);
+  const previewRows = rows.slice(0, 100);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -217,10 +223,6 @@ export function CustomerImportDialog() {
           return;
         }
 
-        const dataRows = data.slice(headerIdx + 1).filter((row) =>
-          (row as unknown[]).some((cell) => String(cell).trim() !== "")
-        );
-
         const parsed = parseKiotVietRows(data as unknown[][]);
         setTotalRows(parsed.length);
         setRows(parsed);
@@ -233,23 +235,23 @@ export function CustomerImportDialog() {
 
   function handleImport() {
     const toSend = validRows.map((r) => r.parsed!);
-    const totalBatches = Math.ceil(toSend.length / IMPORT_CHUNK_SIZE);
+    const total = toSend.length;
+    setProgress({ done: 0, total, startedAt: Date.now() });
     startTransition(async () => {
       let totalImported = 0;
       let totalSkipped = 0;
 
       for (let i = 0; i < toSend.length; i += IMPORT_CHUNK_SIZE) {
-        const batchNum = Math.floor(i / IMPORT_CHUNK_SIZE) + 1;
-        setBatchProgress({ current: batchNum, total: totalBatches });
-
         const chunk = toSend.slice(i, i + IMPORT_CHUNK_SIZE);
         const result = await importCustomers(chunk);
         if ("error" in result) {
-          toast.error(`Lỗi tại batch ${batchNum}: ${result.error}`);
+          toast.error(`Lỗi import: ${result.error}`);
+          setProgress(null);
           return;
         }
         totalImported += result.imported;
         totalSkipped += result.skipped;
+        setProgress({ done: Math.min(i + IMPORT_CHUNK_SIZE, total), total, startedAt: Date.now() });
       }
 
       toast.success(
@@ -264,7 +266,7 @@ export function CustomerImportDialog() {
     setRows([]);
     setTotalRows(0);
     setFileError(null);
-    setBatchProgress(null);
+    setProgress(null);
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -334,15 +336,58 @@ export function CustomerImportDialog() {
                   ⚠️ Trùng SĐT trong file: <strong>{duplicateRows.length}</strong>
                 </span>
               )}
-              {totalRows > 20 && (
+              {totalRows > 100 && (
                 <span className="text-gray-400 text-xs">
-                  (hiển thị 20/{totalRows} dòng)
+                  (hiển thị 100/{totalRows} dòng)
                 </span>
               )}
             </div>
           )}
 
-          {/* Preview table */}
+          {/* Error rows — show ALL regardless of position in file */}
+          {(errorRows.length > 0 || duplicateRows.length > 0) && (
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium text-red-700 flex items-center gap-1.5">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {errorRows.length + duplicateRows.length} dòng cần chú ý (sẽ bị bỏ qua khi import)
+              </p>
+              <div className="overflow-x-auto rounded-lg border border-red-200 max-h-52 overflow-y-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-red-50 text-red-800 uppercase sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">#</th>
+                      <th className="px-3 py-2 font-medium">Tên KH</th>
+                      <th className="px-3 py-2 font-medium">SĐT</th>
+                      <th className="px-3 py-2 font-medium">Lý do</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-red-100">
+                    {[...errorRows, ...duplicateRows].map((row) => (
+                      <tr
+                        key={row.rowIndex}
+                        className={row.status === "error" ? "bg-red-50" : "bg-yellow-50"}
+                      >
+                        <td className="px-3 py-1.5 text-gray-400">{row.rowIndex}</td>
+                        <td className="px-3 py-1.5 font-medium text-gray-900 max-w-[160px] truncate">
+                          {row.name || <span className="text-red-400 italic">trống</span>}
+                        </td>
+                        <td className="px-3 py-1.5 text-gray-600">{row.phone || "—"}</td>
+                        <td className="px-3 py-1.5">
+                          {row.status === "duplicate_in_file" ? (
+                            <span className="text-yellow-700">Trùng SĐT trong file</span>
+                          ) : (
+                            <span className="text-red-700">{row.errors.join(", ")}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Preview table — first 100 rows (all statuses) */}
           {previewRows.length > 0 && (
             <div className="overflow-x-auto rounded-lg border">
               <table className="w-full text-xs text-left">
@@ -407,8 +452,8 @@ export function CustomerImportDialog() {
             disabled={validRows.length === 0 || isPending}
           >
             {isPending
-              ? batchProgress && batchProgress.total > 1
-                ? `Đang import... (batch ${batchProgress.current}/${batchProgress.total})`
+              ? progress && progress.total > 0
+                ? `Đang import... (${progress.done}/${progress.total})`
                 : "Đang import..."
               : `Import ${validRows.length} khách hàng`}
           </Button>

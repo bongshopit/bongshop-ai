@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 import { AddLoyaltyPointsDialog } from "@/components/shared/add-loyalty-points-dialog";
 import { AdjustLoyaltyPointsDialog } from "@/components/shared/adjust-loyalty-points-dialog";
 import { LoyaltyLogTable } from "@/components/shared/loyalty-log-table";
+import { CustomerStoragePanel } from "@/components/shared/customer-storage-panel";
 
 export async function generateMetadata({
   params,
@@ -42,6 +43,12 @@ export default async function CustomerDetailPage({
         orders: {
           orderBy: { createdAt: "desc" },
           take: 10,
+        },
+        storages: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            items: { orderBy: { createdAt: "asc" } },
+          },
         },
       },
     }),
@@ -173,6 +180,20 @@ export default async function CustomerDetailPage({
             <Suspense fallback={<div className="h-24 animate-pulse bg-gray-100 rounded" />}>
               <LoyaltyLogTable customerId={customer.id} />
             </Suspense>
+          </CardContent>
+        </Card>
+
+        {/* US-016: Gửi hàng */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Gửi hàng</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CustomerStoragePanel
+              customerId={customer.id}
+              storages={customer.storages}
+              canManage={canManageLoyalty}
+            />
           </CardContent>
         </Card>
 

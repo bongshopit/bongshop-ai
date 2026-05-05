@@ -253,6 +253,7 @@ model Customer {
 
   orders      Order[]
   loyaltyLogs LoyaltyLog[]
+  storages    CustomerStorage[] // US-016
 
   @@index([email])
   @@map("customers")
@@ -289,7 +290,41 @@ model OrderItem {
   @@map("order_items")
 }
 
-// ==================== CÀI ĐẶT TỈ LỆ TÍCH ĐIỂM (US-013) ====================
+// ==================== GỬi HÀNG KHÁCH HÀNG (US-016) ====================
+
+model CustomerStorage {
+  id         String   @id @default(cuid())
+  customerId String
+  note       String?
+  status     String   @default("OPEN") // "OPEN" | "CLOSED"
+  createdBy  String   // userId
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer   Customer              @relation(fields: [customerId], references: [id])
+  items      CustomerStorageItem[]
+
+  @@index([customerId])
+  @@index([status])
+  @@map("customer_storages")
+}
+
+model CustomerStorageItem {
+  id          String   @id @default(cuid())
+  storageId   String
+  productName String   // snapshot tên hàng tại thời điểm gửci
+  quantity    Int      // số lượng gửci
+  takenQty    Int      @default(0) // số đã lấy
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  storage     CustomerStorage @relation(fields: [storageId], references: [id], onDelete: Cascade)
+
+  @@index([storageId])
+  @@map("customer_storage_items")
+}
+
 
 model LoyaltySetting {
   id               String   @id @default(cuid())

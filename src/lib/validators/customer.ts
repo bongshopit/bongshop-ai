@@ -50,3 +50,28 @@ export const customerImportRowSchema = z.object({
 
 export type CustomerImportRow = z.infer<typeof customerImportRowSchema>;
 
+// ==================== US-016: Gửi hàng ====================
+
+export const storageItemInputSchema = z.object({
+  productName: z.string().min(1, "Tên hàng không được trống").max(200, "Tối đa 200 ký tự"),
+  quantity: z.coerce.number().int().min(1, "Số lượng ít nhất là 1"),
+  note: z.string().max(200).optional(),
+});
+
+export const createStorageSchema = z.object({
+  customerId: z.string().min(1),
+  note: z.string().max(500).optional(),
+  items: z
+    .array(storageItemInputSchema)
+    .min(1, "Phải có ít nhất 1 sản phẩm"),
+});
+
+export const takeStorageItemSchema = z.object({
+  itemId: z.string().min(1),
+  qty: z.coerce.number().int().min(1, "Số lượng lấy ít nhất là 1"),
+});
+
+export type StorageItemInput = z.infer<typeof storageItemInputSchema>;
+export type CreateStorageInput = z.infer<typeof createStorageSchema>;
+export type TakeStorageItemInput = z.infer<typeof takeStorageItemSchema>;
+
