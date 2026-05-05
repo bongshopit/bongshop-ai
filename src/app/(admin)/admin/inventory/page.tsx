@@ -1,14 +1,16 @@
-import { Metadata } from "next";
+﻿import { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Plus, Package, Layers } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
-
-export const dynamic = "force-dynamic";
 import { Pagination } from "@/components/shared/pagination";
 import { ProductImportDialog } from "@/components/shared/product-import-dialog";
+import { TableSkeleton } from "@/components/shared/table-skeleton";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Tồn kho - BongShop",
@@ -65,11 +67,7 @@ function formatCurrency(value: { toString(): string }) {
   });
 }
 
-export default async function InventoryPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+async function InventoryTable({ searchParams }: { searchParams: SearchParams }) {
   const [{ data: products, total, page, totalPages }, session] = await Promise.all([
     getProducts(searchParams),
     getServerSession(authOptions),
@@ -78,46 +76,12 @@ export default async function InventoryPage({
   const spParams = { q: searchParams.q, status: searchParams.status } as Record<string, string>;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Tồn kho</h1>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline">
-            <Link href="/admin/inventory/groups">
-              <Layers className="mr-2 h-4 w-4" />
-              Nhóm hàng
-            </Link>
-          </Button>
-          {canImport && <ProductImportDialog />}
-          <Button asChild>
-            <Link href="/admin/inventory/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Thêm sản phẩm
-            </Link>
-          </Button>
+    <>
+      {canImport && (
+        <div className="mb-2 flex justify-end">
+          <ProductImportDialog />
         </div>
-      </div>
-
-      {/* Search bar */}
-      <form method="GET" className="flex gap-3 mb-4">
-        <input
-          name="q"
-          defaultValue={searchParams.q ?? ""}
-          placeholder="Tìm theo tên hoặc SKU..."
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <select
-          name="status"
-          defaultValue={searchParams.status ?? ""}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Tất cả</option>
-          <option value="active">Đang kinh doanh</option>
-          <option value="inactive">Ngừng kinh doanh</option>
-        </select>
-        <Button type="submit" variant="outline">Tìm kiếm</Button>
-      </form>
-
+      )}
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -138,7 +102,7 @@ export default async function InventoryPage({
             <tbody className="divide-y divide-gray-100">
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-gray-400">
+                  <td colSpan={10} className="px-4 py-10 text-center text-gray-400">
                     <Package className="mx-auto h-8 w-8 mb-2 opacity-40" />
                     Không tìm thấy sản phẩm nào
                   </td>
@@ -226,6 +190,57 @@ export default async function InventoryPage({
         baseUrl="/admin/inventory"
         searchParams={spParams}
       />
+    </>
+  );
+}
+
+export default function InventoryPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Tồn kho</h1>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/inventory/groups">
+              <Layers className="mr-2 h-4 w-4" />
+              Nhóm hàng
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/inventory/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Thêm sản phẩm
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      <form method="GET" className="flex gap-3 mb-4">
+        <input
+          name="q"
+          defaultValue={searchParams.q ?? ""}
+          placeholder="Tìm theo tên hoặc SKU..."
+          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <select
+          name="status"
+          defaultValue={searchParams.status ?? ""}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Tất cả</option>
+          <option value="active">Đang kinh doanh</option>
+          <option value="inactive">Ngừng kinh doanh</option>
+        </select>
+        <Button type="submit" variant="outline">Tìm kiếm</Button>
+      </form>
+
+      <Suspense fallback={<TableSkeleton columns={10} rows={10} />}>
+        <InventoryTable searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 }

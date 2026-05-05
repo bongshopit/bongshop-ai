@@ -1,10 +1,12 @@
-import { Metadata } from "next";
+﻿import { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { CalculatePayrollForm } from "@/components/shared/calculate-payroll-form";
 import { PayrollStatusButton } from "@/components/shared/payroll-status-button";
 import { Pagination } from "@/components/shared/pagination";
+import { TableSkeleton } from "@/components/shared/table-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -69,11 +71,9 @@ async function getPayrolls(month: number, year: number, page: number) {
   return { data, total, page: validPage, totalPages };
 }
 
-export default async function PayrollPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+
+
+async function PayrollData({ searchParams }: { searchParams: SearchParams }) {
   const now = new Date();
   const month = parseInt(searchParams.month ?? String(now.getMonth() + 1), 10);
   const year = parseInt(searchParams.year ?? String(now.getFullYear()), 10);
@@ -85,53 +85,7 @@ export default async function PayrollPage({
   const totalNet = payrolls.reduce((s, p) => s + Number(p.netSalary), 0);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Bảng lương</h1>
-
-      {/* Tính lương form — AC-6.1 */}
-      <div className="rounded-lg border bg-white p-5">
-        <p className="text-sm text-gray-500 mb-3">
-          Chọn tháng/năm và nhấn <strong>Tính lương</strong> để tổng hợp giờ làm từ chấm công.
-          Phiếu đã <span className="text-green-700 font-medium">Đã trả</span> sẽ không bị tính lại.
-        </p>
-        <CalculatePayrollForm defaultMonth={month} defaultYear={year} />
-      </div>
-
-      {/* Filter tháng/năm xem bảng — AC-6.2 */}
-      <form method="GET" className="flex gap-3 items-end">
-        <div className="space-y-1">
-          <label className="block text-xs text-gray-500">Xem tháng</label>
-          <select
-            name="month"
-            defaultValue={month}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-              <option key={m} value={m}>Tháng {m}</option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1">
-          <label className="block text-xs text-gray-500">Năm</label>
-          <select
-            name="year"
-            defaultValue={year}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {Array.from({ length: 6 }, (_, i) => now.getFullYear() - 5 + i + 1).map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-        </div>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-gray-800 text-white text-sm rounded-md hover:bg-gray-700 transition-colors"
-        >
-          Xem
-        </button>
-      </form>
-
-      {/* Summary */}
+    <div className="space-y-4">
       {payrolls.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
           <div className="rounded-lg border bg-white p-4">
@@ -149,7 +103,6 @@ export default async function PayrollPage({
         </div>
       )}
 
-      {/* Bảng lương — AC-6.2 */}
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -170,7 +123,7 @@ export default async function PayrollPage({
               {payrolls.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-4 py-10 text-center text-gray-400">
-                    Chưa có bảng lương tháng {month}/{year}. Nhấn &quot;Tính lương&quot; để tổng hợp.
+                    Chưa có bảng lương tháng {month}/{year}. Nhấn “Tính lương” để tổng hợp.
                   </td>
                 </tr>
               ) : (
@@ -197,7 +150,9 @@ export default async function PayrollPage({
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[p.status] ?? "bg-gray-100 text-gray-600"}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          STATUS_COLOR[p.status] ?? "bg-gray-100 text-gray-600"
+                        }`}
                       >
                         {STATUS_LABEL[p.status] ?? p.status}
                       </span>
@@ -231,6 +186,83 @@ export default async function PayrollPage({
           }}
         />
       </div>
+    </div>
+  );
+}
+
+function PayrollDataSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-lg border bg-white p-4 h-16 animate-pulse bg-gray-50" />
+        ))}
+      </div>
+      <TableSkeleton columns={9} rows={10} />
+    </div>
+  );
+}
+
+export default function PayrollPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const now = new Date();
+  const month = parseInt(searchParams.month ?? String(now.getMonth() + 1), 10);
+  const year = parseInt(searchParams.year ?? String(now.getFullYear()), 10);
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Bảng lương</h1>
+
+      {/* Calculate payroll form — immediate */}
+      <div className="rounded-lg border bg-white p-5">
+        <p className="text-sm text-gray-500 mb-3">
+          Chọn tháng/năm và nhấn <strong>Tính lương</strong> để tổng hợp giờ làm từ chấm công.
+          Phiếu đã <span className="text-green-700 font-medium">Đã trả</span> sẽ không bị tính lại.
+        </p>
+        <CalculatePayrollForm defaultMonth={month} defaultYear={year} />
+      </div>
+
+      {/* Month/year selector — immediate, no DB dependency */}
+      <form method="GET" className="flex gap-3 items-end">
+        <div className="space-y-1">
+          <label className="block text-xs text-gray-500">Xem tháng</label>
+          <select
+            name="month"
+            defaultValue={month}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+              <option key={m} value={m}>Tháng {m}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label className="block text-xs text-gray-500">Năm</label>
+          <select
+            name="year"
+            defaultValue={year}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {Array.from({ length: 6 }, (_, i) => now.getFullYear() - 5 + i + 1).map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-gray-800 text-white text-sm rounded-md hover:bg-gray-700 transition-colors"
+        >
+          Xem
+        </button>
+      </form>
+
+      {/* Payroll data — in Suspense */}
+      <Suspense fallback={<PayrollDataSkeleton />}>
+        <PayrollData searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 }

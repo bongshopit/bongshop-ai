@@ -1,10 +1,12 @@
-import { Metadata } from "next";
+﻿import { Metadata } from "next";
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { AttendanceCheckinPanel } from "@/components/shared/attendance-checkin-panel";
 import { Pagination } from "@/components/shared/pagination";
+import { TableSkeleton } from "@/components/shared/table-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +39,6 @@ async function getAttendances(params: SearchParams) {
       lt: new Date(year, month, 1),
     };
   } else {
-    // Mặc định: tháng hiện tại
     const now = new Date();
     where.date = {
       gte: new Date(now.getFullYear(), now.getMonth(), 1),
@@ -77,7 +78,7 @@ async function getAttendances(params: SearchParams) {
 }
 
 function formatTime(date: Date | null) {
-  if (!date) return "—";
+  if (!date) return "---";
   return new Date(date).toLocaleTimeString("vi-VN", {
     hour: "2-digit",
     minute: "2-digit",
@@ -92,21 +93,15 @@ function formatDate(date: Date) {
   });
 }
 
-export default async function AttendancePage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+async function AttendanceContent({ searchParams }: { searchParams: SearchParams }) {
   const session = await getServerSession(authOptions);
 
-  // Tìm employee của user đang đăng nhập
   const currentEmployee = session?.user?.id
     ? await prisma.employee.findFirst({
         where: { user: { id: session.user.id } },
       })
     : null;
 
-  // Lấy trạng thái chấm công hôm nay
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -121,7 +116,6 @@ export default async function AttendancePage({
       })
     : null;
 
-  // Lấy danh sách chấm công
   const [{ data: attendances, total, page, totalPages }, employees] = await Promise.all([
     getAttendances(searchParams),
     prisma.employee.findMany({
@@ -141,10 +135,7 @@ export default async function AttendancePage({
   if (searchParams.employeeId) spParams.employeeId = searchParams.employeeId;
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Chấm công</h1>
-
-      {/* Panel check-in/out */}
+    <>
       <AttendanceCheckinPanel
         todayAttendance={
           todayAttendance
@@ -160,7 +151,6 @@ export default async function AttendancePage({
         hasEmployee={!!currentEmployee}
       />
 
-      {/* Bộ lọc */}
       <form method="GET" className="flex flex-wrap gap-3 mb-4">
         <div className="flex flex-col gap-1">
           <label className="text-xs text-gray-500">Tháng</label>
@@ -205,7 +195,6 @@ export default async function AttendancePage({
         </div>
       </form>
 
-      {/* Bảng chấm công */}
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -224,10 +213,7 @@ export default async function AttendancePage({
             <tbody className="divide-y divide-gray-100">
               {attendances.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-4 py-10 text-center text-gray-400"
-                  >
+                  <td colSpan={8} className="px-4 py-10 text-center text-gray-400">
                     Không có dữ liệu chấm công
                   </td>
                 </tr>
@@ -237,28 +223,14 @@ export default async function AttendancePage({
                   const working = !!att.checkIn && !att.checkOut;
                   return (
                     <tr key={att.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-700">
-                        {formatDate(att.date)}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-900">
-                        {att.employee.employeeCode}
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">
-                        {att.employee.lastName} {att.employee.firstName}
-                      </td>
+                      <td className="px-4 py-3 text-gray-700">{formatDate(att.date)}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">{att.employee.employeeCode}</td>
+                      <td className="px-4 py-3 text-gray-700">{att.employee.lastName} {att.employee.firstName}</td>
+                      <td className="px-4 py-3 text-gray-500">{att.employee.department || "—"}</td>
+                      <td className="px-4 py-3 text-gray-500">{formatTime(att.checkIn)}</td>
+                      <td className="px-4 py-3 text-gray-500">{formatTime(att.checkOut)}</td>
                       <td className="px-4 py-3 text-gray-500">
-                        {att.employee.department || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {formatTime(att.checkIn)}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {formatTime(att.checkOut)}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {att.totalHours
-                          ? `${Number(att.totalHours).toFixed(2)}h`
-                          : "—"}
+                        {att.totalHours ? `${Number(att.totalHours).toFixed(2)}h` : "—"}
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -270,11 +242,7 @@ export default async function AttendancePage({
                               : "bg-gray-100 text-gray-500"
                           }`}
                         >
-                          {done
-                            ? "Đã hoàn thành"
-                            : working
-                            ? "Đang làm"
-                            : "Vắng"}
+                          {done ? "Đã hoàn thành" : working ? "Đang làm" : "Vắng"}
                         </span>
                       </td>
                     </tr>
@@ -293,7 +261,36 @@ export default async function AttendancePage({
           searchParams={spParams}
         />
       </div>
+    </>
+  );
+}
+
+function AttendanceContentSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="h-24 bg-gray-200 rounded-lg animate-pulse" />
+      <div className="flex gap-3">
+        <div className="h-14 w-36 bg-gray-200 rounded animate-pulse" />
+        <div className="h-14 w-36 bg-gray-200 rounded animate-pulse" />
+        <div className="h-14 w-48 bg-gray-200 rounded animate-pulse" />
+        <div className="h-9 w-16 bg-gray-200 rounded self-end animate-pulse" />
+      </div>
+      <TableSkeleton columns={8} rows={10} />
     </div>
   );
 }
 
+export default function AttendancePage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Chấm công</h1>
+      <Suspense fallback={<AttendanceContentSkeleton />}>
+        <AttendanceContent searchParams={searchParams} />
+      </Suspense>
+    </div>
+  );
+}

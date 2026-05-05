@@ -2,9 +2,11 @@ import { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Star, Upload } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { TableSkeleton } from "@/components/shared/table-skeleton";
 
 export const dynamic = "force-dynamic";
 import { LoyaltySettingsForm } from "@/components/shared/loyalty-settings-form";
@@ -47,13 +49,7 @@ const DEFAULT_SETTINGS: Record<string, LoyaltySettingData> = {
 
 const CATEGORIES: LoyaltyCategory[] = ["DEFAULT", "SUA", "TA_BIM"];
 
-export default async function LoyaltyPage() {
-  const session = await getServerSession(authOptions);
-  if (!session) redirect("/login");
-
-  const isManagerOrAdmin =
-    session.user.role === "MANAGER" || session.user.role === "ADMIN";
-
+async function LoyaltyContent({ isManagerOrAdmin }: { isManagerOrAdmin: boolean }) {
   const dbSettings = await prisma.loyaltySetting.findMany();
   const settingsMap = new Map(dbSettings.map((s) => [s.loyaltyCategory, s]));
 
@@ -72,8 +68,84 @@ export default async function LoyaltyPage() {
   });
 
   return (
+    <div className="max-w-2xl">
+      <div className="bg-white rounded-lg border p-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-1">
+          Tỉ lệ qui đổi điểm
+        </h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Mỗi danh mục có thể dùng{" "}
+          <span className="font-medium">tỉ lệ theo tiền</span> (VNĐ / điểm) hoặc{" "}
+          <span className="font-medium">theo sản phẩm</span> (sản phẩm / điểm).
+        </p>
+
+        <div className="space-y-3">
+          {isManagerOrAdmin
+            ? settings.map((s) => (
+                <LoyaltySettingsForm key={s.loyaltyCategory} setting={s} />
+              ))
+            : settings.map((s) => (
+                <div
+                  key={s.loyaltyCategory}
+                  className="rounded-lg border bg-gray-50 p-4"
+                >
+                  <p className="font-semibold text-sm text-gray-700">
+                    {CATEGORY_LABELS[s.loyaltyCategory as LoyaltyCategory]}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {RATE_TYPE_LABELS[s.rateType as RateType]}
+                  </p>
+                  <p className="text-sm font-medium mt-1">
+                    {s.rateType === "AMOUNT"
+                      ? `${s.amountPerPoint.toLocaleString("vi-VN")} VNĐ = 1 điểm`
+                      : `1 sản phẩm = ${s.pointsPerProduct} điểm`}
+                  </p>
+                </div>
+              ))}
+        </div>
+      </div>
+
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
+        <h3 className="text-sm font-semibold text-amber-800 mb-2">
+          Hướng dẫn áp dụng
+        </h3>
+        <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
+          <li>
+            <strong>Theo tiền:</strong> điểm = ⌊thành_tiền ÷ số_tiền_mỗi_điểm⌋
+          </li>
+          <li>
+            <strong>Theo sản phẩm:</strong> điểm = ⌊số_lượng × điểm_mỗi_sản_phẩm⌋
+          </li>
+          <li>Cài đặt áp dụng ngay cho lần import KiotViet tiếp theo.</li>
+          <li>
+            Danh mục <strong>Mặc định</strong> áp dụng cho các sản phẩm không thuộc
+            nhóm Sữa hoặc Tã bỉm.
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function LoyaltyContentSkeleton() {
+  return (
+    <div className="max-w-2xl space-y-3">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-20 bg-gray-200 rounded-lg animate-pulse" />
+      ))}
+    </div>
+  );
+}
+
+export default async function LoyaltyPage() {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  const isManagerOrAdmin =
+    session.user.role === "MANAGER" || session.user.role === "ADMIN";
+
+  return (
     <div>
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-yellow-100 rounded-lg">
@@ -94,65 +166,9 @@ export default async function LoyaltyPage() {
           Import KiotViet
         </Link>
       </div>
-
-      {/* Settings cards */}
-      <div className="max-w-2xl">
-        <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-sm font-semibold text-gray-700 mb-1">
-            Tỉ lệ qui đổi điểm
-          </h2>
-          <p className="text-xs text-gray-500 mb-4">
-            Mỗi danh mục có thể dùng{" "}
-            <span className="font-medium">tỉ lệ theo tiền</span> (VNĐ / điểm) hoặc{" "}
-            <span className="font-medium">theo sản phẩm</span> (sản phẩm / điểm).
-          </p>
-
-          <div className="space-y-3">
-            {isManagerOrAdmin
-              ? settings.map((s) => (
-                  <LoyaltySettingsForm key={s.loyaltyCategory} setting={s} />
-                ))
-              : settings.map((s) => (
-                  <div
-                    key={s.loyaltyCategory}
-                    className="rounded-lg border bg-gray-50 p-4"
-                  >
-                    <p className="font-semibold text-sm text-gray-700">
-                      {CATEGORY_LABELS[s.loyaltyCategory as LoyaltyCategory]}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {RATE_TYPE_LABELS[s.rateType as RateType]}
-                    </p>
-                    <p className="text-sm font-medium mt-1">
-                      {s.rateType === "AMOUNT"
-                        ? `${s.amountPerPoint.toLocaleString("vi-VN")} VNĐ = 1 điểm`
-                        : `1 sản phẩm = ${s.pointsPerProduct} điểm`}
-                    </p>
-                  </div>
-                ))}
-          </div>
-        </div>
-
-        {/* Usage note */}
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
-          <h3 className="text-sm font-semibold text-amber-800 mb-2">
-            Hướng dẫn áp dụng
-          </h3>
-          <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
-            <li>
-              <strong>Theo tiền:</strong> điểm = ⌊thành_tiền ÷ số_tiền_mỗi_điểm⌋
-            </li>
-            <li>
-              <strong>Theo sản phẩm:</strong> điểm = ⌊số_lượng × điểm_mỗi_sản_phẩm⌋
-            </li>
-            <li>Cài đặt áp dụng ngay cho lần import KiotViet tiếp theo.</li>
-            <li>
-              Danh mục <strong>Mặc định</strong> áp dụng cho các sản phẩm không thuộc
-              nhóm Sữa hoặc Tã bỉm.
-            </li>
-          </ul>
-        </div>
-      </div>
+      <Suspense fallback={<LoyaltyContentSkeleton />}>
+        <LoyaltyContent isManagerOrAdmin={isManagerOrAdmin} />
+      </Suspense>
     </div>
   );
 }

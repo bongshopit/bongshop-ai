@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { EmployeeSearch } from "@/components/shared/employee-search";
 import { Pagination } from "@/components/shared/pagination";
+import { TableSkeleton } from "@/components/shared/table-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -71,15 +72,8 @@ async function getDepartments() {
   return result.map((r) => r.department).filter((d): d is string => d !== null);
 }
 
-export default async function EmployeesPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const [{ data: employees, total, page, totalPages }, departments] = await Promise.all([
-    getEmployees(searchParams),
-    getDepartments(),
-  ]);
+async function EmployeesTable({ searchParams }: { searchParams: SearchParams }) {
+  const { data: employees, total, page, totalPages } = await getEmployees(searchParams);
   const spParams = {
     q: searchParams.q,
     department: searchParams.department,
@@ -87,25 +81,7 @@ export default async function EmployeesPage({
   } as Record<string, string>;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý nhân viên</h1>
-        <Button asChild>
-          <Link href="/admin/employees/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Thêm nhân viên
-          </Link>
-        </Button>
-      </div>
-
-      <Suspense
-        fallback={
-          <div className="h-10 w-96 bg-gray-200 rounded animate-pulse" />
-        }
-      >
-        <EmployeeSearch departments={departments} />
-      </Suspense>
-
+    <>
       <div className="mt-4 rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -198,6 +174,49 @@ export default async function EmployeesPage({
         baseUrl="/admin/employees"
         searchParams={spParams}
       />
+    </>
+  );
+}
+
+async function EmployeesFilter({ searchParams }: { searchParams: SearchParams }) {
+  const departments = await getDepartments();
+  return <EmployeeSearch departments={departments} />;
+}
+
+export default function EmployeesPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý nhân viên</h1>
+        <Button asChild>
+          <Link href="/admin/employees/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Thêm nhân viên
+          </Link>
+        </Button>
+      </div>
+
+      <Suspense
+        fallback={
+          <div className="flex flex-wrap gap-3">
+            <div className="h-10 w-64 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-40 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 w-36 bg-gray-200 rounded animate-pulse" />
+          </div>
+        }
+      >
+        <EmployeesFilter searchParams={searchParams} />
+      </Suspense>
+
+      <Suspense
+        fallback={<TableSkeleton columns={9} rows={10} />}
+      >
+        <EmployeesTable searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
-
-export const dynamic = "force-dynamic";
 import {
   Card,
   CardContent,
@@ -9,6 +8,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Users, Clock, Package, UserCheck } from "lucide-react";
+import { StatsSkeletonGrid } from "@/components/shared/table-skeleton";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Dashboard - BongShop",
@@ -33,7 +35,7 @@ async function getStats() {
   return { employeeCount, productCount, customerCount, todayAttendance };
 }
 
-export default async function DashboardPage() {
+async function DashboardStats() {
   const stats = await getStats();
 
   const cards = [
@@ -68,25 +70,33 @@ export default async function DashboardPage() {
   ];
 
   return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {cards.map((card) => (
+        <Card key={card.title}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              {card.title}
+            </CardTitle>
+            <div className={`p-2 rounded-lg ${card.bg}`}>
+              <card.icon className={`h-5 w-5 ${card.color}`} />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{card.value}</p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {cards.map((card) => (
-          <Card key={card.title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                {card.title}
-              </CardTitle>
-              <div className={`p-2 rounded-lg ${card.bg}`}>
-                <card.icon className={`h-5 w-5 ${card.color}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{card.value}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Suspense fallback={<StatsSkeletonGrid count={4} />}>
+        <DashboardStats />
+      </Suspense>
     </div>
   );
 }

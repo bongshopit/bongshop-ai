@@ -1,9 +1,11 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import { Prisma } from "@prisma/client";
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { CashTransactionForm } from "@/components/shared/cash-transaction-form";
 import { Pagination } from "@/components/shared/pagination";
+import { TableSkeleton } from "@/components/shared/table-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +48,20 @@ async function getSummary(from?: Date, to?: Date) {
   return { income, expense, balance: income - expense };
 }
 
+async function getTotalBalance() {
+  const rows = await prisma.cashTransaction.groupBy({
+    by: ["type"],
+    _sum: { amount: true },
+  });
+  let income = 0;
+  let expense = 0;
+  for (const r of rows) {
+    if (r.type === "INCOME") income = Number(r._sum.amount ?? 0);
+    if (r.type === "EXPENSE") expense = Number(r._sum.amount ?? 0);
+  }
+  return income - expense;
+}
+
 async function getTransactions(params: SearchParams) {
   const page = Math.max(1, parseInt(params.page ?? "1") || 1);
   const where: Prisma.CashTransactionWhereInput = {};
@@ -79,20 +95,6 @@ async function getTransactions(params: SearchParams) {
   return { data, total, page: validPage, totalPages };
 }
 
-async function getTotalBalance() {
-  const rows = await prisma.cashTransaction.groupBy({
-    by: ["type"],
-    _sum: { amount: true },
-  });
-  let income = 0;
-  let expense = 0;
-  for (const r of rows) {
-    if (r.type === "INCOME") income = Number(r._sum.amount ?? 0);
-    if (r.type === "EXPENSE") expense = Number(r._sum.amount ?? 0);
-  }
-  return income - expense;
-}
-
 function formatCurrency(value: number) {
   return value.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
 }
@@ -101,11 +103,7 @@ function formatDate(date: Date) {
   return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short" }).format(date);
 }
 
-export default async function CashbookPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+async function CashbookData({ searchParams }: { searchParams: SearchParams }) {
   const fromDate = searchParams.from ? new Date(searchParams.from) : undefined;
   const toDate = searchParams.to
     ? new Date(new Date(searchParams.to).setHours(23, 59, 59, 999))
@@ -126,10 +124,8 @@ export default async function CashbookPage({
   } as Record<string, string>;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Sổ quỹ</h1>
-
-      {/* Summary cards — AC-5.3 */}
+    <div className="space-y-4">
+      {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-lg border bg-white p-5 flex items-center gap-4">
           <div className="p-2 bg-blue-100 rounded-lg">
@@ -166,7 +162,6 @@ export default async function CashbookPage({
         </div>
       </div>
 
-      {/* AC-5.4 — báo cáo tổng kết kỳ (hiện khi có filter thời gian) */}
       {isFiltered && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
           <span className="font-medium">Báo cáo kỳ lọc:</span> Thu{" "}
@@ -176,15 +171,111 @@ export default async function CashbookPage({
         </div>
       )}
 
+      {/* Transaction table */}
+      <div className="rounded-lg border bg-white overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+              <tr>
+                <th className="px-4 py-3 font-medium">Ngày</th>
+                <th className="px-4 py-3 font-medium">Loại</th>
+                <th className="px-4 py-3 font-medium">Mô tả</th>
+                <th className="px-4 py-3 font-medium">Danh mục</th>
+                <th className="px-4 py-3 font-medium text-right">Số tiền</th>
+                <th className="px-4 py-3 font-medium">Người tạo</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {txList.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
+                    Không có giao dịch nào
+                  </td>
+                </tr>
+              ) : (
+                txList.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                      {formatDate(tx.date)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          tx.type === "INCOME"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {tx.type === "INCOME" ? "Thu" : "Chi"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-900 max-w-[200px] truncate">
+                      {tx.description}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">{tx.category ?? "—"}</td>
+                    <td
+                      className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${
+                        tx.type === "INCOME" ? "text-green-700" : "text-red-700"
+                      }`}
+                    >
+                      {tx.type === "INCOME" ? "+" : "-"}
+                      {formatCurrency(Number(tx.amount))}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">{tx.createdBy}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <Pagination
+        currentPage={txPage}
+        totalPages={txTotalPages}
+        totalItems={txTotal}
+        pageSize={PAGE_SIZE}
+        baseUrl="/admin/cashbook"
+        searchParams={spParams}
+      />
+    </div>
+  );
+}
+
+function CashbookDataSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="rounded-lg border bg-white p-5 animate-pulse">
+            <div className="h-16 bg-gray-100 rounded" />
+          </div>
+        ))}
+      </div>
+      <TableSkeleton columns={6} rows={8} />
+    </div>
+  );
+}
+
+export default function CashbookPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const isFiltered = !!(searchParams.from || searchParams.to || searchParams.type);
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Sổ quỹ</h1>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Form tạo phiếu — AC-5.1 */}
+        {/* Left: Add transaction form — immediate */}
         <div className="lg:col-span-1">
           <CashTransactionForm />
         </div>
 
-        {/* Danh sách giao dịch — AC-5.2 */}
+        {/* Right: Filter + Data */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Filter form */}
+          {/* Filter form — immediate, no DB dependency */}
           <form method="GET" className="flex flex-wrap gap-3 items-end">
             <div className="space-y-1">
               <label className="block text-xs text-gray-500">Từ ngày</label>
@@ -232,72 +323,10 @@ export default async function CashbookPage({
             )}
           </form>
 
-          {/* Transaction table */}
-          <div className="rounded-lg border bg-white overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Ngày</th>
-                    <th className="px-4 py-3 font-medium">Loại</th>
-                    <th className="px-4 py-3 font-medium">Mô tả</th>
-                    <th className="px-4 py-3 font-medium">Danh mục</th>
-                    <th className="px-4 py-3 font-medium text-right">Số tiền</th>
-                    <th className="px-4 py-3 font-medium">Người tạo</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {txList.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
-                        Không có giao dịch nào
-                      </td>
-                    </tr>
-                  ) : (
-                    txList.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                          {formatDate(tx.date)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                              tx.type === "INCOME"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {tx.type === "INCOME" ? "Thu" : "Chi"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-gray-900 max-w-[200px] truncate">
-                          {tx.description}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500">{tx.category ?? "—"}</td>
-                        <td
-                          className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${
-                            tx.type === "INCOME" ? "text-green-700" : "text-red-700"
-                          }`}
-                        >
-                          {tx.type === "INCOME" ? "+" : "-"}
-                          {formatCurrency(Number(tx.amount))}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500">{tx.createdBy}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <Pagination
-            currentPage={txPage}
-            totalPages={txTotalPages}
-            totalItems={txTotal}
-            pageSize={PAGE_SIZE}
-            baseUrl="/admin/cashbook"
-            searchParams={spParams}
-          />
+          {/* Summary + Table — in Suspense */}
+          <Suspense fallback={<CashbookDataSkeleton />}>
+            <CashbookData searchParams={searchParams} />
+          </Suspense>
         </div>
       </div>
     </div>

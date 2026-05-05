@@ -140,6 +140,7 @@ src/
 | US-012 | Tích điểm thủ công + import từ báo cáo bán hàng KiotViet | Verified |
 | US-013 | Cài đặt tỉ lệ tích điểm (Theo tiền / Theo sản phẩm) | Verified |
 | US-014 | Sửa lỗi Pagination & Cải thiện Hiệu năng Webapp | Verified |
+| US-015 | Progressive Loading UI | Verified (Sprint 2 — fix encoding + refined shell) |
 
 ---
 

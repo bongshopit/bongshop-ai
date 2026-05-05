@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CustomerSearch } from "@/components/shared/customer-search";
 import { CustomerImportDialog } from "@/components/shared/customer-import-dialog";
 import { Pagination } from "@/components/shared/pagination";
+import { TableSkeleton } from "@/components/shared/table-skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +69,7 @@ async function getCustomers(params: SearchParams) {
   return { data, total, page: validPage, totalPages };
 }
 
-export default async function CustomersPage({
+async function CustomersTable({
   searchParams,
 }: {
   searchParams: SearchParams;
@@ -82,24 +83,8 @@ export default async function CustomersPage({
   const spParams = { q: searchParams.q } as Record<string, string>;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý khách hàng</h1>
-        <div className="flex items-center gap-2">
-          {canImport && <CustomerImportDialog />}
-          <Button asChild>
-            <Link href="/admin/customers/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Thêm khách hàng
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      <Suspense fallback={<div className="h-10 w-80 bg-gray-200 rounded animate-pulse" />}>
-        <CustomerSearch />
-      </Suspense>
-
+    <>
+      {canImport && <CustomerImportDialog />}
       <div className="mt-4 rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -189,6 +174,34 @@ export default async function CustomersPage({
         baseUrl="/admin/customers"
         searchParams={spParams}
       />
+    </>
+  );
+}
+
+export default function CustomersPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý khách hàng</h1>
+        <Button asChild>
+          <Link href="/admin/customers/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Thêm khách hàng
+          </Link>
+        </Button>
+      </div>
+
+      <Suspense fallback={<div className="h-10 w-80 bg-gray-200 rounded animate-pulse" />}>
+        <CustomerSearch />
+      </Suspense>
+
+      <Suspense fallback={<TableSkeleton columns={9} rows={10} />}>
+        <CustomersTable searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 }
