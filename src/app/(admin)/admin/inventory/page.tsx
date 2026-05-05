@@ -43,7 +43,7 @@ async function getProducts(params: SearchParams) {
       : {}),
   };
 
-  const [data, total] = await Promise.all([
+  const [data, total, totalAll] = await Promise.all([
     prisma.product.findMany({
       where,
       take: PAGE_SIZE,
@@ -52,12 +52,13 @@ async function getProducts(params: SearchParams) {
       include: { productGroup: { select: { id: true, name: true, loyaltyCategory: true } } },
     }),
     prisma.product.count({ where }),
+    prisma.product.count(),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const validPage = Math.min(page, totalPages);
 
-  return { data, total, page: validPage, totalPages };
+  return { data, total, totalAll, page: validPage, totalPages };
 }
 
 function formatCurrency(value: { toString(): string }) {
@@ -68,12 +69,18 @@ function formatCurrency(value: { toString(): string }) {
 }
 
 async function InventoryTable({ searchParams }: { searchParams: SearchParams }) {
-  const [{ data: products, total, page, totalPages }, session] = await Promise.all([
+  const [{ data: products, total, totalAll, page, totalPages }, session] = await Promise.all([
     getProducts(searchParams),
     getServerSession(authOptions),
   ]);
   const canImport = session?.user?.role === "MANAGER" || session?.user?.role === "ADMIN";
-  const spParams = { q: searchParams.q, status: searchParams.status } as Record<string, string>;
+  // Filter out undefined/empty values to avoid "undefined" appearing in URL params
+  const spParams = Object.fromEntries(
+    Object.entries({ q: searchParams.q, status: searchParams.status }).filter(
+      ([, v]) => v !== undefined && v !== ""
+    )
+  ) as Record<string, string>;
+  const isFiltered = Boolean(searchParams.q || searchParams.status);
 
   return (
     <>
@@ -82,6 +89,21 @@ async function InventoryTable({ searchParams }: { searchParams: SearchParams }) 
           <ProductImportDialog />
         </div>
       )}
+      {/* Tổng số sản phẩm */}
+      <div className="mb-3 flex items-center gap-4 text-sm text-gray-600">
+        <span>
+          Tổng kho:{" "}
+          <span className="font-semibold text-gray-900">
+            {totalAll.toLocaleString("vi-VN")}
+          </span>{" "}
+          sản phẩm
+        </span>
+        {isFiltered && total !== totalAll && (
+          <span className="text-blue-600">
+            ({total.toLocaleString("vi-VN")} kết quả lọc)
+          </span>
+        )}
+      </div>
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">

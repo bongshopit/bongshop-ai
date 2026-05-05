@@ -113,14 +113,21 @@ function parseKiotVietProductRows(data: unknown[][]): ImportRowResult[] {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const IMPORT_CHUNK_SIZE = 500;
+const IMPORT_CHUNK_SIZE = 1000;
+
+interface ImportProgress {
+  done: number;
+  total: number;
+  startedAt: number; // Date.now()
+}
 
 export function ProductImportDialog() {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<ImportRowResult[]>([]);
   const [fileName, setFileName] = useState("");
   const [isPending, startTransition] = useTransition();
-  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+  const [progress, setProgress] = useState<ImportProgress | null>(null);
+  const importStartRef = useRef<number>(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const validRows = rows.filter((r) => r.status === "valid" && r.parsed);
@@ -163,31 +170,33 @@ export function ProductImportDialog() {
     setOpen(false);
     setRows([]);
     setFileName("");
-    setBatchProgress(null);
+    setProgress(null);
     if (fileRef.current) fileRef.current.value = "";
   }
 
   function handleImport() {
     if (validRows.length === 0) return;
-    const totalBatches = Math.ceil(validRows.length / IMPORT_CHUNK_SIZE);
+    const total = validRows.length;
+    const startedAt = Date.now();
+    importStartRef.current = startedAt;
+    setProgress({ done: 0, total, startedAt });
     startTransition(async () => {
       let totalCreated = 0;
       let totalUpdated = 0;
       let totalSkipped = 0;
 
       for (let i = 0; i < validRows.length; i += IMPORT_CHUNK_SIZE) {
-        const batchNum = Math.floor(i / IMPORT_CHUNK_SIZE) + 1;
-        setBatchProgress({ current: batchNum, total: totalBatches });
-
         const chunk = validRows.slice(i, i + IMPORT_CHUNK_SIZE);
         const result = await importProducts(chunk.map((r) => r.parsed));
         if ("error" in result) {
-          toast.error(`Lỗi tại batch ${batchNum}: ${result.error}`);
+          toast.error(`Lỗi import: ${result.error}`);
+          setProgress(null);
           return;
         }
         totalCreated += result.created;
         totalUpdated += result.updated;
         totalSkipped += result.skipped;
+        setProgress({ done: Math.min(i + IMPORT_CHUNK_SIZE, total), total, startedAt });
       }
 
       toast.success(
@@ -303,20 +312,58 @@ export function ProductImportDialog() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-gray-50">
-          <Button variant="outline" onClick={handleClose} disabled={isPending}>
-            Hủy
-          </Button>
-          <Button
-            onClick={handleImport}
-            disabled={validRows.length === 0 || isPending}
-          >
-            {isPending
-              ? batchProgress && batchProgress.total > 1
-                ? `Đang import... (batch ${batchProgress.current}/${batchProgress.total})`
-                : "Đang import..."
-              : `Import ${validRows.length} sản phẩm`}
-          </Button>
+        <div className="px-6 py-4 border-t bg-gray-50 space-y-3">
+          {/* Progress bar */}
+          {isPending && progress && (() => {
+            const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
+            const elapsed = (Date.now() - progress.startedAt) / 1000; // seconds
+            const rate = elapsed > 0 && progress.done > 0 ? Math.round(progress.done / elapsed) : null;
+            const remaining = rate && progress.done > 0
+              ? Math.ceil((progress.total - progress.done) / rate)
+              : null;
+            return (
+              <div>
+                <div className="flex justify-between text-xs text-gray-600 mb-1">
+                  <span>
+                    Đang xử lý{" "}
+                    <span className="font-medium">{progress.done.toLocaleString("vi-VN")}</span>
+                    {" / "}
+                    {progress.total.toLocaleString("vi-VN")} sản phẩm
+                    {rate !== null && (
+                      <span className="text-gray-400 ml-2">
+                        (~{rate.toLocaleString("vi-VN")} SP/s)
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-medium">
+                    {pct}%
+                    {remaining !== null && remaining > 0 && (
+                      <span className="text-gray-400 font-normal ml-2">
+                        còn ~{remaining < 60 ? `${remaining}s` : `${Math.ceil(remaining / 60)}m`}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
+          <div className="flex items-center justify-end gap-3">
+            <Button variant="outline" onClick={handleClose} disabled={isPending}>
+              Hủy
+            </Button>
+            <Button
+              onClick={handleImport}
+              disabled={validRows.length === 0 || isPending}
+            >
+              {isPending ? "Đang import..." : `Import ${validRows.length.toLocaleString("vi-VN")} sản phẩm`}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

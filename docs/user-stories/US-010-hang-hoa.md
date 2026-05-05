@@ -321,5 +321,29 @@ for (const batch of chunks(validRows, 100)) {
 
 ---
 
-## Status: ✅ Verified (Sprint 2 — ProductGroup + import KiotViet + nhóm hàng page + 12 tests PASSED)
-> Sprint 3 amendment: batch import không giới hạn số dòng (chunk 500 rows/call)
+---
+
+## Sprint 4 Amendment — Tối ưu import 20k+ sản phẩm (2026-05-05)
+
+### Vấn đề
+Import file 20k+ sản phẩm gây lỗi `FATAL: too many connections` do `Promise.all` mở đồng thời tối đa 100 DB connection per server-action call.
+
+### Thay đổi kỹ thuật
+
+| Thành phần | Trước | Sau |
+|------------|-------|-----|
+| DB operations | `Promise.all([upsert × 100])` = 100 connections | `prisma.$transaction([...upserts])` = 1 connection |
+| Track created/updated | `findUnique` per row (N extra queries) | `findMany({ sku: { in: [...] } })` 1 lần |
+| Giới hạn rows/call | 1.000 | Không giới hạn (transaction tự xử lý) |
+| UI progress | "batch X/Y" text | Progress bar % + số sản phẩm đã xử lý |
+
+### Acceptance Criteria mới
+- **AC-10.A1:** Import 20.000+ sản phẩm không sinh lỗi DB connection
+- **AC-10.A2:** UI hiển thị progress bar realtime (% + X/Y sản phẩm)  
+- **AC-10.A3:** Mỗi chunk dùng tối đa 1 DB connection (transaction)
+
+## Status: ✅ Verified (Sprint 4 — bulk SQL upsert + progress bar, TC-413/414/415 PASSED)
+> Sprint 2: ProductGroup + import KiotViet + nhóm hàng page + 12 tests PASSED
+> Sprint 3: batch import không giới hạn số dòng (chunk 500 rows/call)
+> Sprint 4 (fix connection): `prisma.$transaction([...upserts])` — 1 connection/batch
+> Sprint 4 (perf): `INSERT ... ON CONFLICT DO UPDATE` bulk SQL — 1 statement/batch, ~10–50x faster

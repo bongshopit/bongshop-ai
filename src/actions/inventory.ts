@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import {
   productSchema,
   stockInSchema,
@@ -200,14 +201,6 @@ function detectLoyaltyCategory(groupName: string): "DEFAULT" | "SUA" | "TA_BIM" 
   return "DEFAULT";
 }
 
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    chunks.push(arr.slice(i, i + size));
-  }
-  return chunks;
-}
-
 export type ImportProductsResult =
   | { created: number; updated: number; skipped: number }
   | { error: string };
@@ -217,9 +210,6 @@ export async function importProducts(
 ): Promise<ImportProductsResult> {
   if (!Array.isArray(rows) || rows.length === 0) {
     return { error: "Không có dữ liệu để import" };
-  }
-  if (rows.length > 1000) {
-    return { error: "Mỗi batch tối đa 1.000 sản phẩm" };
   }
 
   // Validate rows
@@ -235,7 +225,7 @@ export async function importProducts(
     return { error: "Không có dòng hợp lệ để import" };
   }
 
-  // Upsert product groups (get or create)
+  // Upsert product groups (sequential, few unique groups per batch)
   const uniqueGroupNames = Array.from(
     new Set(validRows.map((r) => r.groupName).filter((n): n is string => Boolean(n)))
   );
@@ -251,62 +241,71 @@ export async function importProducts(
     groupMap.set(name, group.id);
   }
 
-  // Upsert products in batches of 100
-  let created = 0;
-  let updated = 0;
-
-  for (const batch of chunkArray(validRows, 100)) {
-    await Promise.all(
-      batch.map(async (row) => {
-        const productGroupId = row.groupName
-          ? (groupMap.get(row.groupName) ?? null)
-          : null;
-        const existing = await prisma.product.findUnique({
-          where: { sku: row.sku },
-          select: { id: true },
-        });
-
-        await prisma.product.upsert({
-          where: { sku: row.sku },
-          update: {
-            name: row.name,
-            description: row.description ?? null,
-            unit: row.unit || "cái",
-            sellPrice: row.sellPrice,
-            costPrice: row.costPrice,
-            quantity: row.quantity,
-            productGroupId,
-            brand: row.brand ?? null,
-            imageUrl: row.imageUrl ?? null,
-            barcode: row.barcode ?? null,
-            allowLoyalty: row.allowLoyalty,
-            isActive: row.isActive,
-          },
-          create: {
-            sku: row.sku,
-            name: row.name,
-            description: row.description ?? null,
-            unit: row.unit || "cái",
-            sellPrice: row.sellPrice,
-            costPrice: row.costPrice,
-            quantity: row.quantity,
-            productGroupId,
-            brand: row.brand ?? null,
-            imageUrl: row.imageUrl ?? null,
-            barcode: row.barcode ?? null,
-            allowLoyalty: row.allowLoyalty,
-            isActive: row.isActive,
-          },
-        });
-
-        if (existing) {
-          updated++;
-        } else {
-          created++;
-        }
+  // Fetch all existing SKUs in a single query to track created vs updated
+  const skus = validRows.map((r) => r.sku);
+  const existingSkuSet = new Set(
+    (
+      await prisma.product.findMany({
+        where: { sku: { in: skus } },
+        select: { sku: true },
       })
-    );
-  }
+    ).map((p) => p.sku)
+  );
+
+  const created = validRows.filter((r) => !existingSkuSet.has(r.sku)).length;
+  const updated = validRows.filter((r) => existingSkuSet.has(r.sku)).length;
+
+  // Single bulk INSERT ... ON CONFLICT DO UPDATE — 1 SQL statement per batch
+  // (replaces prisma.$transaction([...N upserts]) which generated N SQL statements)
+  const valueFragments = validRows.map((row) => {
+    const productGroupId = row.groupName
+      ? (groupMap.get(row.groupName) ?? null)
+      : null;
+    return Prisma.sql`(
+      gen_random_uuid(),
+      ${row.sku},
+      ${row.name},
+      ${row.description ?? null},
+      ${row.unit || "cái"},
+      ${row.sellPrice},
+      ${row.costPrice},
+      ${row.quantity},
+      ${productGroupId},
+      ${row.brand ?? null},
+      ${row.imageUrl ?? null},
+      ${row.barcode ?? null},
+      ${row.allowLoyalty},
+      ${row.isActive},
+      NOW(),
+      NOW()
+    )`;
+  });
+
+  await prisma.$executeRaw(
+    Prisma.sql`
+      INSERT INTO "products" (
+        id, sku, name, description, unit,
+        "sellPrice", "costPrice", quantity, "productGroupId",
+        brand, "imageUrl", barcode, "allowLoyalty", "isActive",
+        "createdAt", "updatedAt"
+      )
+      VALUES ${Prisma.join(valueFragments)}
+      ON CONFLICT (sku) DO UPDATE SET
+        name        = EXCLUDED.name,
+        description = EXCLUDED.description,
+        unit        = EXCLUDED.unit,
+        "sellPrice"      = EXCLUDED."sellPrice",
+        "costPrice"      = EXCLUDED."costPrice",
+        quantity         = EXCLUDED.quantity,
+        "productGroupId" = EXCLUDED."productGroupId",
+        brand       = EXCLUDED.brand,
+        "imageUrl"  = EXCLUDED."imageUrl",
+        barcode     = EXCLUDED.barcode,
+        "allowLoyalty" = EXCLUDED."allowLoyalty",
+        "isActive"  = EXCLUDED."isActive",
+        "updatedAt" = NOW()
+    `
+  );
 
   revalidatePath("/admin/inventory");
   revalidatePath("/admin/inventory/groups");

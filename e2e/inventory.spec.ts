@@ -233,3 +233,95 @@ test.describe("US-004: Tồn kho", () => {
     await expect(page.locator("table tbody")).toContainText(testSku);
   });
 });
+
+// ─── Import KiotViet (Sprint 4 — batch import optimization) ──────────────────
+
+import * as path from "path";
+
+test.describe("US-010 Sprint 4: Import hàng hóa (batch transaction)", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+  });
+
+  // TC-413: Dialog import mở và đóng đúng
+  test("TC-413: Dialog Import KiotViet mở và đóng được", async ({ page }) => {
+    await page.goto("/admin/inventory");
+
+    // Nút import tồn tại
+    const importBtn = page.getByRole("button", { name: "Import KiotViet" });
+    await expect(importBtn).toBeVisible();
+
+    // Mở dialog
+    await importBtn.click();
+    await expect(page.getByRole("heading", { name: "Import hàng hóa từ KiotViet" })).toBeVisible();
+    await expect(page.getByText('Cột C phải có tiêu đề "Mã hàng"')).toBeVisible();
+    await expect(page.locator('input[type="file"]')).toBeVisible();
+
+    // Đóng dialog
+    await page.getByRole("button", { name: "Hủy" }).click();
+    await expect(page.getByRole("heading", { name: "Import hàng hóa từ KiotViet" })).not.toBeVisible();
+  });
+
+  // TC-414: Load file mẫu → preview hiển thị đúng số dòng hợp lệ
+  test("TC-414: Load file xlsx mẫu → hiển thị preview đúng", async ({ page }) => {
+    await page.goto("/admin/inventory");
+    await page.getByRole("button", { name: "Import KiotViet" }).click();
+
+    const sampleFile = path.resolve(
+      __dirname,
+      "../docs/samples/DanhSachSanPham.xlsx"
+    );
+    await page.locator('input[type="file"]').setInputFiles(sampleFile);
+
+    // Chờ parse xong (file lớn, cho timeout dài hơn)
+    await expect(page.getByText(/hợp lệ/)).toBeVisible({ timeout: 30_000 });
+
+    // Phải có >= 20.000 sản phẩm hợp lệ
+    const summaryText = await page.getByText(/hợp lệ/).textContent();
+    const match = summaryText?.match(/(\d[\d.,]*)\s*hợp lệ/);
+    const validCount = match
+      ? parseInt(match[1].replace(/[,.]/g, ""), 10)
+      : 0;
+    expect(validCount).toBeGreaterThan(20_000);
+
+    // Preview table hiển thị tối đa 100 dòng
+    const previewRows = page.locator("table tbody tr");
+    await expect(previewRows.first()).toBeVisible();
+
+    // Nút Import hiển thị số sản phẩm
+    await expect(
+      page.getByRole("button", { name: /Import \d/ })
+    ).toBeVisible();
+  });
+
+  // TC-415: Import batch nhỏ thành công — progress bar hiển thị
+  test("TC-415: Import batch nhỏ (50 sản phẩm) — progress bar và kết quả đúng", async ({ page }) => {
+    await page.goto("/admin/inventory");
+    await page.getByRole("button", { name: "Import KiotViet" }).click();
+
+    const fixtureFile = path.resolve(
+      __dirname,
+      "../docs/samples/TC415-batch-import.xlsx"
+    );
+    await page.locator('input[type="file"]').setInputFiles(fixtureFile);
+
+    // Chờ preview parse xong
+    await expect(page.getByText(/hợp lệ/)).toBeVisible({ timeout: 10_000 });
+
+    // Phải có đúng 50 sản phẩm hợp lệ
+    await expect(page.getByText(/50.*hợp lệ|hợp lệ.*50/)).toBeVisible();
+
+    // Click Import
+    await page.getByRole("button", { name: /Import.*50/ }).click();
+
+    // Chờ import hoàn tất (toast success)
+    await expect(page.getByText(/Import thành công/)).toBeVisible({ timeout: 60_000 });
+
+    // Dialog đóng tự động sau khi hoàn tất
+    await expect(
+      page.getByRole("heading", { name: "Import hàng hóa từ KiotViet" })
+    ).not.toBeVisible({ timeout: 5_000 });
+  });
+});
