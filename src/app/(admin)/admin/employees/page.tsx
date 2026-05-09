@@ -59,7 +59,7 @@ async function EmployeesTable({ searchParams }: { searchParams: SearchParams }) 
     <>
       <div className="mt-4 rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[640px] text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
               <tr>
                 <th className="px-4 py-3 font-medium">Mã NV</th>
@@ -138,8 +138,8 @@ export default function EmployeesPage({
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý nhân viên</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Quản lý nhân viên</h1>
         <Button asChild>
           <Link href="/admin/employees/new">
             <Plus className="mr-2 h-4 w-4" />

@@ -111,7 +111,7 @@ async function CustomersTable({
       </div>
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[900px] text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
               <tr>
                 <th className="px-4 py-3 font-medium">Tên khách hàng</th>
@@ -209,8 +209,8 @@ export default function CustomersPage({
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý khách hàng</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Quản lý khách hàng</h1>
         <div className="flex items-center gap-2">
           <DeleteAllCustomersButton />
           <Button asChild>

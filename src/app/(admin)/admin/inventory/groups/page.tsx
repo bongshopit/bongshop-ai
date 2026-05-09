@@ -33,15 +33,15 @@ export default async function ProductGroupsPage() {
   });
 
   return (
-    <div className="p-6">
-      <div className="flex items-center gap-3 mb-6">
+    <div>
+      <div className="flex items-center gap-3 mb-4 sm:mb-6">
         <Button asChild variant="ghost" size="icon">
           <Link href="/admin/inventory">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Nhóm hàng</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Nhóm hàng</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             Phân loại nhóm hàng → tích điểm tương ứng (Mặc định / Sữa / Tã bỉm)
           </p>
@@ -54,7 +54,8 @@ export default async function ProductGroupsPage() {
         </div>
       ) : (
         <div className="bg-white rounded-lg border overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[480px] text-sm">
             <thead>
               <tr className="bg-gray-50 text-left text-gray-600">
                 <th className="px-4 py-3 font-medium">Tên nhóm</th>
@@ -90,7 +91,8 @@ export default async function ProductGroupsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -146,13 +146,13 @@ export default async function LoyaltyPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 sm:mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-yellow-100 rounded-lg">
             <Star className="h-5 w-5 text-yellow-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tích điểm</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Tích điểm</h1>
             <p className="text-sm text-gray-500 mt-0.5">
               Cài đặt tỉ lệ qui đổi điểm tích lũy theo 3 danh mục
             </p>

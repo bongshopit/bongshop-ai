@@ -106,7 +106,7 @@ async function InventoryTable({ searchParams }: { searchParams: SearchParams }) 
       </div>
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[900px] text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
               <tr>
                 <th className="px-4 py-3 font-medium">SKU</th>
@@ -223,9 +223,9 @@ export default function InventoryPage({
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Tồn kho</h1>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Tồn kho</h1>
+        <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant="outline">
             <Link href="/admin/inventory/groups">
               <Layers className="mr-2 h-4 w-4" />
@@ -241,7 +241,7 @@ export default function InventoryPage({
         </div>
       </div>
 
-      <form method="GET" className="flex gap-3 mb-4">
+      <form method="GET" className="flex flex-wrap gap-3 mb-4">
         <input
           name="q"
           defaultValue={searchParams.q ?? ""}

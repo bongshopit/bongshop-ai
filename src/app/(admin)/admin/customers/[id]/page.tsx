@@ -96,8 +96,8 @@ export default async function CustomerDetailPage({
           <ChevronLeft className="h-4 w-4 mr-1" />
           Quay lại danh sách
         </Link>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{customer.name}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{customer.name}</h1>
           <Button asChild size="sm">
             <Link href={`/admin/customers/${customer.id}/edit`}>
               <Pencil className="h-4 w-4 mr-2" />

@@ -31,7 +31,7 @@ export async function LoyaltyLogTable({ customerId }: { customerId: string }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[480px] text-sm">
         <thead>
           <tr className="border-b text-gray-500 text-xs">
             <th className="pb-2 text-left font-medium">Ngày</th>

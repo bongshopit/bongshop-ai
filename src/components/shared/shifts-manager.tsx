@@ -175,7 +175,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
           </button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[480px] text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
               <tr>
                 <th className="px-4 py-3 font-medium">Tên ca</th>
@@ -268,7 +268,7 @@ export function ShiftsManager({ shifts, assignments, employees, currentDate }: P
           </div>
         </form>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[560px] text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
               <tr>
                 <th className="px-4 py-3 font-medium">Ngày</th>

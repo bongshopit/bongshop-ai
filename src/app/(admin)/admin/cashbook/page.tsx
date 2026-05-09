@@ -174,7 +174,7 @@ async function CashbookData({ searchParams }: { searchParams: SearchParams }) {
       {/* Transaction table */}
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[600px] text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
               <tr>
                 <th className="px-4 py-3 font-medium">Ngày</th>

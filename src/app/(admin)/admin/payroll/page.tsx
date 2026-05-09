@@ -87,7 +87,7 @@ async function PayrollData({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="space-y-4">
       {payrolls.length > 0 && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="rounded-lg border bg-white p-4">
             <p className="text-xs text-gray-500">Số nhân viên</p>
             <p className="text-2xl font-bold text-gray-900">{payrolls.length}</p>
@@ -105,7 +105,7 @@ async function PayrollData({ searchParams }: { searchParams: SearchParams }) {
 
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[700px] text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
               <tr>
                 <th className="px-4 py-3 font-medium">Mã NV</th>
@@ -193,7 +193,7 @@ async function PayrollData({ searchParams }: { searchParams: SearchParams }) {
 function PayrollDataSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[1, 2, 3].map((i) => (
           <div key={i} className="rounded-lg border bg-white p-4 h-16 animate-pulse bg-gray-50" />
         ))}
@@ -226,7 +226,7 @@ export default function PayrollPage({
       </div>
 
       {/* Month/year selector — immediate, no DB dependency */}
-      <form method="GET" className="flex gap-3 items-end">
+      <form method="GET" className="flex flex-wrap gap-3 items-end">
         <div className="space-y-1">
           <label className="block text-xs text-gray-500">Xem tháng</label>
           <select
