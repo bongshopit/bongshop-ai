@@ -1,7 +1,7 @@
-import { test, expect } from "@playwright/test";
+﻿import { test, expect } from "@playwright/test";
 
 test.describe("Authentication", () => {
-  test("TC-001: Login page hiển thị đúng", async ({ page }) => {
+  test("TC-001: Login page hiá»ƒn thá»‹ Ä‘Ãºng", async ({ page }) => {
     await page.goto("/login");
 
     // Title "BongShop" visible
@@ -9,25 +9,25 @@ test.describe("Authentication", () => {
 
     // Description visible
     await expect(
-      page.getByText("Đăng nhập hệ thống quản lý")
+      page.getByText("ÄÄƒng nháº­p há»‡ thá»‘ng quáº£n lÃ½")
     ).toBeVisible();
 
     // Email & Password fields visible
     await expect(page.getByLabel("Email")).toBeVisible();
-    await expect(page.getByLabel("Mật khẩu")).toBeVisible();
+    await expect(page.getByLabel("Máº­t kháº©u")).toBeVisible();
 
     // Submit button visible
     await expect(
-      page.getByRole("button", { name: "Đăng nhập" })
+      page.getByRole("button", { name: "ÄÄƒng nháº­p" })
     ).toBeVisible();
   });
 
-  test("TC-002: Login thành công với admin", async ({ page }) => {
+  test("TC-002: Login thÃ nh cÃ´ng vá»›i admin", async ({ page }) => {
     await page.goto("/login");
 
     await page.getByLabel("Email").fill("admin@bongshop.vn");
-    await page.getByLabel("Mật khẩu").fill("admin123");
-    await page.getByRole("button", { name: "Đăng nhập" }).click();
+    await page.getByLabel("Máº­t kháº©u").fill("bongshop");
+    await page.getByRole("button", { name: "ÄÄƒng nháº­p" }).click();
 
     // Wait for redirect to /admin
     await page.waitForURL("**/admin", { timeout: 10000 });
@@ -39,26 +39,27 @@ test.describe("Authentication", () => {
     ).toBeVisible();
   });
 
-  test("TC-003: Login thất bại với sai password", async ({ page }) => {
+  test("TC-003: Login tháº¥t báº¡i vá»›i sai password", async ({ page }) => {
     await page.goto("/login");
 
     await page.getByLabel("Email").fill("admin@bongshop.vn");
-    await page.getByLabel("Mật khẩu").fill("wrongpassword");
-    await page.getByRole("button", { name: "Đăng nhập" }).click();
+    await page.getByLabel("Máº­t kháº©u").fill("wrongpassword");
+    await page.getByRole("button", { name: "ÄÄƒng nháº­p" }).click();
 
     // Error message visible
     await expect(
-      page.getByText("Email hoặc mật khẩu không đúng")
+      page.getByText("Email hoáº·c máº­t kháº©u khÃ´ng Ä‘Ãºng")
     ).toBeVisible({ timeout: 10000 });
 
     // Still on login page
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test("TC-004: Redirect về /login khi chưa đăng nhập", async ({ page }) => {
+  test("TC-004: Redirect vá» /login khi chÆ°a Ä‘Äƒng nháº­p", async ({ page }) => {
     await page.goto("/admin");
 
     // Should be redirected to login
     await expect(page).toHaveURL(/\/login/);
   });
 });
+

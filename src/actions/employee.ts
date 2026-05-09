@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { employeeSchema } from "@/lib/validators/employee";
 
@@ -17,16 +18,40 @@ export async function createEmployee(formData: FormData): Promise<ActionState> {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const existing = await prisma.employee.findUnique({
-    where: { employeeCode: parsed.data.employeeCode },
-  });
+  const { employeeCode, firstName, lastName, email, phone, salaryType, hourlyRate, monthlySalary } = parsed.data;
 
-  if (existing) {
-    return { error: "Mã nhân viên đã tồn tại" };
-  }
+  const [codeConflict, emailConflict] = await Promise.all([
+    prisma.employee.findUnique({ where: { employeeCode } }),
+    prisma.employee.findUnique({ where: { email } }),
+  ]);
 
-  await prisma.employee.create({
-    data: parsed.data,
+  if (codeConflict) return { error: "Mã nhân viên đã tồn tại" };
+  if (emailConflict) return { error: "Email đã được sử dụng" };
+
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) return { error: "Email đã được sử dụng bởi tài khoản khác" };
+
+  const passwordHash = await bcrypt.hash("bongshop", 12);
+
+  await prisma.user.create({
+    data: {
+      email,
+      name: `${lastName} ${firstName}`,
+      passwordHash,
+      role: "STAFF",
+      employee: {
+        create: {
+          employeeCode,
+          firstName,
+          lastName,
+          email,
+          phone,
+          salaryType,
+          hourlyRate: salaryType === "HOURLY" ? hourlyRate ?? 0 : 0,
+          monthlySalary: salaryType === "MONTHLY" ? monthlySalary ?? 0 : 0,
+        },
+      },
+    },
   });
 
   revalidatePath("/admin/employees");
@@ -44,17 +69,26 @@ export async function updateEmployee(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const existing = await prisma.employee.findFirst({
-    where: { employeeCode: parsed.data.employeeCode, id: { not: id } },
+  const { employeeCode, firstName, lastName, email, phone, salaryType, hourlyRate, monthlySalary } = parsed.data;
+
+  const codeConflict = await prisma.employee.findFirst({
+    where: { employeeCode, id: { not: id } },
   });
 
-  if (existing) {
-    return { error: "Mã nhân viên đã tồn tại" };
-  }
+  if (codeConflict) return { error: "Mã nhân viên đã tồn tại" };
 
   await prisma.employee.update({
     where: { id },
-    data: parsed.data,
+    data: {
+      employeeCode,
+      firstName,
+      lastName,
+      email,
+      phone,
+      salaryType,
+      hourlyRate: salaryType === "HOURLY" ? hourlyRate ?? 0 : 0,
+      monthlySalary: salaryType === "MONTHLY" ? monthlySalary ?? 0 : 0,
+    },
   });
 
   revalidatePath("/admin/employees");

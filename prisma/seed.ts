@@ -4,55 +4,17 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  // Seed admin user
-  const adminPassword = await bcrypt.hash("admin123", 12);
+  // Seed admin user (mặc định: admin@bongshop.vn / bongshop)
+  const adminPassword = await bcrypt.hash("bongshop", 12);
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@bongshop.vn" },
-    update: {},
+    update: { passwordHash: adminPassword },
     create: {
       email: "admin@bongshop.vn",
       name: "Admin BongShop",
       passwordHash: adminPassword,
       role: Role.ADMIN,
-      employee: {
-        create: {
-          employeeCode: "NV001",
-          firstName: "Admin",
-          lastName: "BongShop",
-          email: "admin@bongshop.vn",
-          phone: "0900000001",
-          position: "Quản trị viên",
-          department: "Ban giám đốc",
-          hourlyRate: 0,
-        },
-      },
-    },
-  });
-
-  // Seed manager user
-  const managerPassword = await bcrypt.hash("manager123", 12);
-
-  const manager = await prisma.user.upsert({
-    where: { email: "manager@bongshop.vn" },
-    update: {},
-    create: {
-      email: "manager@bongshop.vn",
-      name: "Quản lý BongShop",
-      passwordHash: managerPassword,
-      role: Role.MANAGER,
-      employee: {
-        create: {
-          employeeCode: "NV002",
-          firstName: "Quản lý",
-          lastName: "BongShop",
-          email: "manager@bongshop.vn",
-          phone: "0900000002",
-          position: "Quản lý",
-          department: "Quản lý",
-          hourlyRate: 50000,
-        },
-      },
     },
   });
 
@@ -80,7 +42,7 @@ async function main() {
     });
   }
 
-  console.log("Seed completed:", { admin: admin.email, manager: manager.email });
+  console.log("Seed completed:", { admin: admin.email });
 }
 
 main()

@@ -1,50 +1,50 @@
-import { test, expect } from "@playwright/test";
+﻿import { test, expect } from "@playwright/test";
 import * as XLSX from "xlsx";
 import * as path from "path";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function loginAsAdmin(page: import("@playwright/test").Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill("admin@bongshop.vn");
-  await page.getByLabel("Mật khẩu").fill("admin123");
-  await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await page.getByLabel("Máº­t kháº©u").fill("bongshop");
+  await page.getByRole("button", { name: "ÄÄƒng nháº­p" }).click();
   await page.waitForURL("**/admin", { timeout: 30000 });
 }
 
 /**
- * Tạo buffer xlsx giả lập định dạng KiotViet với các dòng tuỳ chỉnh.
+ * Táº¡o buffer xlsx giáº£ láº­p Ä‘á»‹nh dáº¡ng KiotViet vá»›i cÃ¡c dÃ²ng tuá»³ chá»‰nh.
  */
 function createKiotVietXlsx(
   dataRows: (string | number)[][]
 ): { name: string; mimeType: string; buffer: Buffer } {
   const header = [
-    "Loại khách",
-    "Chi nhánh tạo",
-    "Mã khách hàng",
-    "Tên khách hàng",
-    "Điện thoại",
-    "Địa chỉ",
-    "Khu vực giao hàng",
-    "Phường/Xã",
-    "Công ty",
-    "Mã số thuế",
-    "Số CMND/CCCD",
-    "Ngày sinh",
-    "Giới tính",
+    "Loáº¡i khÃ¡ch",
+    "Chi nhÃ¡nh táº¡o",
+    "MÃ£ khÃ¡ch hÃ ng",
+    "TÃªn khÃ¡ch hÃ ng",
+    "Äiá»‡n thoáº¡i",
+    "Äá»‹a chá»‰",
+    "Khu vá»±c giao hÃ ng",
+    "PhÆ°á»ng/XÃ£",
+    "CÃ´ng ty",
+    "MÃ£ sá»‘ thuáº¿",
+    "Sá»‘ CMND/CCCD",
+    "NgÃ y sinh",
+    "Giá»›i tÃ­nh",
     "Email",
     "Facebook",
-    "Nhóm khách hàng",
-    "Ghi chú",
-    "Điểm hiện tại",
-    "Tổng điểm",
-    "Người tạo",
-    "Ngày tạo",
-    "Ngày giao dịch cuối",
-    "Nợ cần thu hiện tại",
-    "Tổng bán",
-    "Tổng bán trừ trả hàng",
-    "Trạng thái",
+    "NhÃ³m khÃ¡ch hÃ ng",
+    "Ghi chÃº",
+    "Äiá»ƒm hiá»‡n táº¡i",
+    "Tá»•ng Ä‘iá»ƒm",
+    "NgÆ°á»i táº¡o",
+    "NgÃ y táº¡o",
+    "NgÃ y giao dá»‹ch cuá»‘i",
+    "Ná»£ cáº§n thu hiá»‡n táº¡i",
+    "Tá»•ng bÃ¡n",
+    "Tá»•ng bÃ¡n trá»« tráº£ hÃ ng",
+    "Tráº¡ng thÃ¡i",
   ];
 
   const ws = XLSX.utils.aoa_to_sheet([header, ...dataRows]);
@@ -60,11 +60,11 @@ function createKiotVietXlsx(
   };
 }
 
-/** Tạo xlsx không có cột "Tên khách hàng" (sai định dạng) */
+/** Táº¡o xlsx khÃ´ng cÃ³ cá»™t "TÃªn khÃ¡ch hÃ ng" (sai Ä‘á»‹nh dáº¡ng) */
 function createInvalidFormatXlsx(): { name: string; mimeType: string; buffer: Buffer } {
   const ws = XLSX.utils.aoa_to_sheet([
-    ["Mã", "Tên", "SĐT"],
-    ["001", "Nguyễn A", "0901234567"],
+    ["MÃ£", "TÃªn", "SÄT"],
+    ["001", "Nguyá»…n A", "0901234567"],
   ]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
@@ -82,241 +82,241 @@ const REAL_FILE = path.resolve(
   "../docs/samples/DanhSachKhachHang.xlsx"
 );
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-test.describe("US-008: Nhập khách hàng từ KiotViet xlsx", () => {
+test.describe("US-008: Nháº­p khÃ¡ch hÃ ng tá»« KiotViet xlsx", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
   });
 
-  // TC-801: Nút "Nhập từ KiotViet" hiển thị với ADMIN
-  test("TC-801: Nút Nhập từ KiotViet hiển thị với ADMIN", async ({ page }) => {
+  // TC-801: NÃºt "Nháº­p tá»« KiotViet" hiá»ƒn thá»‹ vá»›i ADMIN
+  test("TC-801: NÃºt Nháº­p tá»« KiotViet hiá»ƒn thá»‹ vá»›i ADMIN", async ({ page }) => {
     await page.goto("/admin/customers");
     await expect(
-      page.getByRole("button", { name: /Nhập từ KiotViet/ })
+      page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ })
     ).toBeVisible();
   });
 
-  // TC-802: STAFF không thấy nút import (cần staff account — skip do chưa có seed)
-  test.skip("TC-802: Nút Nhập từ KiotViet ẩn với STAFF (cần staff credentials)", async () => {
-    // Yêu cầu thêm STAFF user vào seed trước khi enable test này
+  // TC-802: STAFF khÃ´ng tháº¥y nÃºt import (cáº§n staff account â€” skip do chÆ°a cÃ³ seed)
+  test.skip("TC-802: NÃºt Nháº­p tá»« KiotViet áº©n vá»›i STAFF (cáº§n staff credentials)", async () => {
+    // YÃªu cáº§u thÃªm STAFF user vÃ o seed trÆ°á»›c khi enable test nÃ y
   });
 
-  // TC-803: Upload file thực từ KiotViet → detect đúng tổng dòng
-  test("TC-803: Upload file KiotViet thực → detect đúng số dòng", async ({ page }) => {
+  // TC-803: Upload file thá»±c tá»« KiotViet â†’ detect Ä‘Ãºng tá»•ng dÃ²ng
+  test("TC-803: Upload file KiotViet thá»±c â†’ detect Ä‘Ãºng sá»‘ dÃ²ng", async ({ page }) => {
     await page.goto("/admin/customers");
 
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
-    await expect(page.locator("text=Nhập khách hàng từ KiotViet")).toBeVisible();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
+    await expect(page.locator("text=Nháº­p khÃ¡ch hÃ ng tá»« KiotViet")).toBeVisible();
 
     const input = page.locator('input[type="file"]');
     await input.setInputFiles(REAL_FILE);
 
-    // Đợi summary xuất hiện với tổng 2587 dòng
-    await expect(page.locator("text=/Tổng dòng.*2587/")).toBeVisible({
+    // Äá»£i summary xuáº¥t hiá»‡n vá»›i tá»•ng 2587 dÃ²ng
+    await expect(page.locator("text=/Tá»•ng dÃ²ng.*2587/")).toBeVisible({
       timeout: 15000,
     });
-    await expect(page.locator("text=/Hợp lệ/")).toBeVisible();
+    await expect(page.locator("text=/Há»£p lá»‡/")).toBeVisible();
 
-    // Nút import phải active
+    // NÃºt import pháº£i active
     await expect(
       page.getByRole("button", { name: /Import/ })
     ).not.toBeDisabled();
 
-    // Đóng dialog
-    await page.getByRole("button", { name: "Hủy" }).click();
+    // ÄÃ³ng dialog
+    await page.getByRole("button", { name: "Há»§y" }).click();
     await expect(
-      page.locator("text=Nhập khách hàng từ KiotViet")
+      page.locator("text=Nháº­p khÃ¡ch hÃ ng tá»« KiotViet")
     ).not.toBeVisible();
   });
 
-  // TC-804: Preview hiển thị đúng các cột: Tên, SĐT, Địa chỉ, Ngày sinh, Giới tính
-  test("TC-804: Preview hiển thị đúng các cột từ file KiotViet", async ({ page }) => {
+  // TC-804: Preview hiá»ƒn thá»‹ Ä‘Ãºng cÃ¡c cá»™t: TÃªn, SÄT, Äá»‹a chá»‰, NgÃ y sinh, Giá»›i tÃ­nh
+  test("TC-804: Preview hiá»ƒn thá»‹ Ä‘Ãºng cÃ¡c cá»™t tá»« file KiotViet", async ({ page }) => {
     await page.goto("/admin/customers");
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
 
     const input = page.locator('input[type="file"]');
     await input.setInputFiles(REAL_FILE);
 
-    await expect(page.locator("text=/Tổng dòng.*2587/")).toBeVisible({
+    await expect(page.locator("text=/Tá»•ng dÃ²ng.*2587/")).toBeVisible({
       timeout: 15000,
     });
 
-    // Scope locator vào bên trong dialog (div.fixed) tránh nhầm bảng danh sách KH
+    // Scope locator vÃ o bÃªn trong dialog (div.fixed) trÃ¡nh nháº§m báº£ng danh sÃ¡ch KH
     const dialog = page.locator("div.fixed").filter({
-      hasText: "Nhập khách hàng từ KiotViet",
+      hasText: "Nháº­p khÃ¡ch hÃ ng tá»« KiotViet",
     });
     const table = dialog.locator("table");
     const ths = table.locator("thead th");
 
-    // Preview table có 7 cột: #, Trạng thái, Tên KH, SĐT, Địa chỉ, Ngày sinh, Giới tính
+    // Preview table cÃ³ 7 cá»™t: #, Tráº¡ng thÃ¡i, TÃªn KH, SÄT, Äá»‹a chá»‰, NgÃ y sinh, Giá»›i tÃ­nh
     await expect(ths).toHaveCount(7);
 
-    // Dòng đầu phải có dữ liệu tên (không trống)
+    // DÃ²ng Ä‘áº§u pháº£i cÃ³ dá»¯ liá»‡u tÃªn (khÃ´ng trá»‘ng)
     const firstRow = table.locator("tbody tr").first();
-    await expect(firstRow).not.toContainText("trống");
+    await expect(firstRow).not.toContainText("trá»‘ng");
 
-    await page.getByRole("button", { name: "Hủy" }).click();
+    await page.getByRole("button", { name: "Há»§y" }).click();
   });
 
-  // TC-805: Ngày sinh convert đúng từ Excel serial → Date (format YYYY-MM-DD)
-  test("TC-805: Ngày sinh từ Excel serial hiển thị đúng YYYY-MM-DD", async ({ page }) => {
+  // TC-805: NgÃ y sinh convert Ä‘Ãºng tá»« Excel serial â†’ Date (format YYYY-MM-DD)
+  test("TC-805: NgÃ y sinh tá»« Excel serial hiá»ƒn thá»‹ Ä‘Ãºng YYYY-MM-DD", async ({ page }) => {
     const ts = Date.now().toString().slice(-8);
     const testPhone = `0911${ts.slice(0, 6)}`;
 
-    // Serial 45889 → 2025-08-12
+    // Serial 45889 â†’ 2025-08-12
     const file = createKiotVietXlsx([
-      ["Cá nhân", "CN", "KH001", `Test ${ts}`, testPhone, "Địa chỉ test", "", "", "", "", "", 45889, "Nữ", "", "", "", "", 0, 0, "Test", 46000, 46000, 0, 0, 0, 1],
+      ["CÃ¡ nhÃ¢n", "CN", "KH001", `Test ${ts}`, testPhone, "Äá»‹a chá»‰ test", "", "", "", "", "", 45889, "Ná»¯", "", "", "", "", 0, 0, "Test", 46000, 46000, 0, 0, 0, 1],
     ]);
 
     await page.goto("/admin/customers");
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
     await page.locator('input[type="file"]').setInputFiles(file);
 
-    await expect(page.locator("text=/Tổng dòng.*1/")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=/Tá»•ng dÃ²ng.*1/")).toBeVisible({ timeout: 10000 });
 
-    // Ngày sinh phải hiển thị dạng YYYY-MM-DD (không phải số serial)
-    const dialog805 = page.locator("div.fixed").filter({ hasText: "Nhập khách hàng từ KiotViet" });
+    // NgÃ y sinh pháº£i hiá»ƒn thá»‹ dáº¡ng YYYY-MM-DD (khÃ´ng pháº£i sá»‘ serial)
+    const dialog805 = page.locator("div.fixed").filter({ hasText: "Nháº­p khÃ¡ch hÃ ng tá»« KiotViet" });
     const table = dialog805.locator("table");
     const dobCell = table.locator("tbody tr").first().locator("td").nth(5);
     const dobText = await dobCell.innerText();
-    // Phải khớp format YYYY-MM-DD
+    // Pháº£i khá»›p format YYYY-MM-DD
     expect(dobText).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 
-    await page.getByRole("button", { name: "Hủy" }).click();
+    await page.getByRole("button", { name: "Há»§y" }).click();
   });
 
-  // TC-806: Upload file không phải xlsx → hiển thị lỗi
-  test("TC-806: Upload file không phải xlsx → báo lỗi", async ({ page }) => {
+  // TC-806: Upload file khÃ´ng pháº£i xlsx â†’ hiá»ƒn thá»‹ lá»—i
+  test("TC-806: Upload file khÃ´ng pháº£i xlsx â†’ bÃ¡o lá»—i", async ({ page }) => {
     await page.goto("/admin/customers");
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
 
     const csvFile = {
       name: "data.csv",
       mimeType: "text/csv",
-      buffer: Buffer.from("Tên,SĐT\nNguyễn A,0901234567"),
+      buffer: Buffer.from("TÃªn,SÄT\nNguyá»…n A,0901234567"),
     };
     await page.locator('input[type="file"]').setInputFiles(csvFile);
 
     await expect(
-      page.locator("text=Chỉ chấp nhận file .xlsx")
+      page.locator("text=Chá»‰ cháº¥p nháº­n file .xlsx")
     ).toBeVisible({ timeout: 5000 });
 
-    await page.getByRole("button", { name: "Hủy" }).click();
+    await page.getByRole("button", { name: "Há»§y" }).click();
   });
 
-  // TC-807: Upload file > 10MB → báo lỗi (skip — khó tạo file >10MB trong test)
-  test.skip("TC-807: Upload file > 10MB → báo lỗi", async () => {
-    // Cần tạo file buffer > 10MB — bỏ qua trong môi trường CI
+  // TC-807: Upload file > 10MB â†’ bÃ¡o lá»—i (skip â€” khÃ³ táº¡o file >10MB trong test)
+  test.skip("TC-807: Upload file > 10MB â†’ bÃ¡o lá»—i", async () => {
+    // Cáº§n táº¡o file buffer > 10MB â€” bá» qua trong mÃ´i trÆ°á»ng CI
   });
 
-  // TC-808: File không có cột "Tên khách hàng" → báo định dạng không hợp lệ
-  test("TC-808: File sai định dạng KiotViet → báo lỗi", async ({ page }) => {
+  // TC-808: File khÃ´ng cÃ³ cá»™t "TÃªn khÃ¡ch hÃ ng" â†’ bÃ¡o Ä‘á»‹nh dáº¡ng khÃ´ng há»£p lá»‡
+  test("TC-808: File sai Ä‘á»‹nh dáº¡ng KiotViet â†’ bÃ¡o lá»—i", async ({ page }) => {
     await page.goto("/admin/customers");
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
 
     const invalidFile = createInvalidFormatXlsx();
     await page.locator('input[type="file"]').setInputFiles(invalidFile);
 
     await expect(
-      page.locator("text=Không nhận diện được định dạng KiotViet")
+      page.locator("text=KhÃ´ng nháº­n diá»‡n Ä‘Æ°á»£c Ä‘á»‹nh dáº¡ng KiotViet")
     ).toBeVisible({ timeout: 5000 });
 
-    await page.getByRole("button", { name: "Hủy" }).click();
+    await page.getByRole("button", { name: "Há»§y" }).click();
   });
 
-  // TC-809: Dòng có Tên trống → đánh dấu error
-  test("TC-809: Dòng có Tên trống → đánh dấu error (màu đỏ)", async ({ page }) => {
+  // TC-809: DÃ²ng cÃ³ TÃªn trá»‘ng â†’ Ä‘Ã¡nh dáº¥u error
+  test("TC-809: DÃ²ng cÃ³ TÃªn trá»‘ng â†’ Ä‘Ã¡nh dáº¥u error (mÃ u Ä‘á»)", async ({ page }) => {
     const ts = Date.now().toString().slice(-8);
 
     const file = createKiotVietXlsx([
-      // Dòng 1: hợp lệ
-      ["Cá nhân", "CN", "KH001", `Valid ${ts}`, `0922${ts.slice(0,6)}`, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
-      // Dòng 2: tên trống
-      ["Cá nhân", "CN", "KH002", "", `0933${ts.slice(0,6)}`, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      // DÃ²ng 1: há»£p lá»‡
+      ["CÃ¡ nhÃ¢n", "CN", "KH001", `Valid ${ts}`, `0922${ts.slice(0,6)}`, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      // DÃ²ng 2: tÃªn trá»‘ng
+      ["CÃ¡ nhÃ¢n", "CN", "KH002", "", `0933${ts.slice(0,6)}`, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
     ]);
 
     await page.goto("/admin/customers");
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
     await page.locator('input[type="file"]').setInputFiles(file);
 
-    await expect(page.locator("text=/Tổng dòng.*2/")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=/Tá»•ng dÃ²ng.*2/")).toBeVisible({ timeout: 10000 });
 
-    // Phải hiển thị 1 dòng lỗi
-    await expect(page.locator("text=/❌ Lỗi.*1/")).toBeVisible();
+    // Pháº£i hiá»ƒn thá»‹ 1 dÃ²ng lá»—i
+    await expect(page.locator("text=/âŒ Lá»—i.*1/")).toBeVisible();
 
-    // Dòng có lỗi phải có class bg-red-50
-    const dialog809 = page.locator("div.fixed").filter({ hasText: "Nhập khách hàng từ KiotViet" });
+    // DÃ²ng cÃ³ lá»—i pháº£i cÃ³ class bg-red-50
+    const dialog809 = page.locator("div.fixed").filter({ hasText: "Nháº­p khÃ¡ch hÃ ng tá»« KiotViet" });
     const table = dialog809.locator("table");
     const rows = table.locator("tbody tr");
-    const errorRow = rows.nth(1); // dòng 2 (index 1)
+    const errorRow = rows.nth(1); // dÃ²ng 2 (index 1)
     await expect(errorRow).toHaveClass(/bg-red-50/);
 
-    // Nút import chỉ import 1 dòng hợp lệ
-    await expect(page.getByRole("button", { name: /Import 1 khách hàng/ })).toBeVisible();
+    // NÃºt import chá»‰ import 1 dÃ²ng há»£p lá»‡
+    await expect(page.getByRole("button", { name: /Import 1 khÃ¡ch hÃ ng/ })).toBeVisible();
 
-    await page.getByRole("button", { name: "Hủy" }).click();
+    await page.getByRole("button", { name: "Há»§y" }).click();
   });
 
-  // TC-810: Dòng SĐT 9 chữ số → đánh dấu error
-  test("TC-810: Dòng SĐT sai định dạng → đánh dấu error", async ({ page }) => {
+  // TC-810: DÃ²ng SÄT 9 chá»¯ sá»‘ â†’ Ä‘Ã¡nh dáº¥u error
+  test("TC-810: DÃ²ng SÄT sai Ä‘á»‹nh dáº¡ng â†’ Ä‘Ã¡nh dáº¥u error", async ({ page }) => {
     const ts = Date.now().toString().slice(-8);
 
     const file = createKiotVietXlsx([
-      // SĐT chỉ 9 chữ số (sai)
-      ["Cá nhân", "CN", "KH001", `BadPhone ${ts}`, "090123456", "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      // SÄT chá»‰ 9 chá»¯ sá»‘ (sai)
+      ["CÃ¡ nhÃ¢n", "CN", "KH001", `BadPhone ${ts}`, "090123456", "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
     ]);
 
     await page.goto("/admin/customers");
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
     await page.locator('input[type="file"]').setInputFiles(file);
 
-    await expect(page.locator("text=/Tổng dòng.*1/")).toBeVisible({ timeout: 10000 });
-    await expect(page.locator("text=/❌ Lỗi.*1/")).toBeVisible();
+    await expect(page.locator("text=/Tá»•ng dÃ²ng.*1/")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=/âŒ Lá»—i.*1/")).toBeVisible();
 
-    // Nút import disabled (0 dòng hợp lệ)
+    // NÃºt import disabled (0 dÃ²ng há»£p lá»‡)
     await expect(
       page.getByRole("button", { name: /Import 0/ })
     ).toBeDisabled();
 
-    await page.getByRole("button", { name: "Hủy" }).click();
+    await page.getByRole("button", { name: "Há»§y" }).click();
   });
 
-  // TC-811: 2 dòng cùng SĐT trong file → dòng 2 đánh dấu duplicate_in_file
-  test("TC-811: Hai dòng cùng SĐT trong file → dòng 2 trùng lặp", async ({ page }) => {
+  // TC-811: 2 dÃ²ng cÃ¹ng SÄT trong file â†’ dÃ²ng 2 Ä‘Ã¡nh dáº¥u duplicate_in_file
+  test("TC-811: Hai dÃ²ng cÃ¹ng SÄT trong file â†’ dÃ²ng 2 trÃ¹ng láº·p", async ({ page }) => {
     const ts = Date.now().toString().slice(-8);
     const dupPhone = `0944${ts.slice(0, 6)}`;
 
     const file = createKiotVietXlsx([
-      ["Cá nhân", "CN", "KH001", `KH First ${ts}`, dupPhone, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
-      ["Cá nhân", "CN", "KH002", `KH Second ${ts}`, dupPhone, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["CÃ¡ nhÃ¢n", "CN", "KH001", `KH First ${ts}`, dupPhone, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["CÃ¡ nhÃ¢n", "CN", "KH002", `KH Second ${ts}`, dupPhone, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
     ]);
 
     await page.goto("/admin/customers");
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
     await page.locator('input[type="file"]').setInputFiles(file);
 
-    await expect(page.locator("text=/Tổng dòng.*2/")).toBeVisible({ timeout: 10000 });
-    await expect(page.locator("text=/⚠️ Trùng SĐT trong file.*1/")).toBeVisible();
+    await expect(page.locator("text=/Tá»•ng dÃ²ng.*2/")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=/âš ï¸ TrÃ¹ng SÄT trong file.*1/")).toBeVisible();
 
-    // Dòng 2 phải có class bg-yellow-50
-    const dialog811 = page.locator("div.fixed").filter({ hasText: "Nhập khách hàng từ KiotViet" });
+    // DÃ²ng 2 pháº£i cÃ³ class bg-yellow-50
+    const dialog811 = page.locator("div.fixed").filter({ hasText: "Nháº­p khÃ¡ch hÃ ng tá»« KiotViet" });
     const table = dialog811.locator("table");
     const dupRow = table.locator("tbody tr").nth(1);
     await expect(dupRow).toHaveClass(/bg-yellow-50/);
 
-    // Chỉ 1 dòng hợp lệ để import
+    // Chá»‰ 1 dÃ²ng há»£p lá»‡ Ä‘á»ƒ import
     await expect(
-      page.getByRole("button", { name: /Import 1 khách hàng/ })
+      page.getByRole("button", { name: /Import 1 khÃ¡ch hÃ ng/ })
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Hủy" }).click();
+    await page.getByRole("button", { name: "Há»§y" }).click();
   });
 
-  // TC-812 + TC-813: Import thành công → toast đúng số liệu, danh sách reload
-  test("TC-813: Import thành công → toast đúng, danh sách reload", async ({ page }) => {
+  // TC-812 + TC-813: Import thÃ nh cÃ´ng â†’ toast Ä‘Ãºng sá»‘ liá»‡u, danh sÃ¡ch reload
+  test("TC-813: Import thÃ nh cÃ´ng â†’ toast Ä‘Ãºng, danh sÃ¡ch reload", async ({ page }) => {
     const ts = Date.now().toString().slice(-8);
     const phone1 = `0955${ts.slice(0, 6)}`;
     const phone2 = `0966${ts.slice(0, 6)}`;
@@ -324,106 +324,107 @@ test.describe("US-008: Nhập khách hàng từ KiotViet xlsx", () => {
     const name2 = `Import Test B ${ts}`;
 
     const file = createKiotVietXlsx([
-      ["Cá nhân", "CN", "KH001", name1, phone1, "123 Đường Test", "", "", "", "", "", 45889, "Nam", "", "", "", "Ghi chú test", 0, 0, "", 0, 0, 0, 0, 0, 1],
-      ["Cá nhân", "CN", "KH002", name2, phone2, "", "", "", "", "", "", "", "Nữ", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["CÃ¡ nhÃ¢n", "CN", "KH001", name1, phone1, "123 ÄÆ°á»ng Test", "", "", "", "", "", 45889, "Nam", "", "", "", "Ghi chÃº test", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["CÃ¡ nhÃ¢n", "CN", "KH002", name2, phone2, "", "", "", "", "", "", "", "Ná»¯", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
     ]);
 
     await page.goto("/admin/customers");
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
     await page.locator('input[type="file"]').setInputFiles(file);
 
-    await expect(page.locator("text=/Tổng dòng.*2/")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=/Tá»•ng dÃ²ng.*2/")).toBeVisible({ timeout: 10000 });
     await expect(
-      page.getByRole("button", { name: /Import 2 khách hàng/ })
+      page.getByRole("button", { name: /Import 2 khÃ¡ch hÃ ng/ })
     ).toBeEnabled();
 
-    await page.getByRole("button", { name: /Import 2 khách hàng/ }).click();
+    await page.getByRole("button", { name: /Import 2 khÃ¡ch hÃ ng/ }).click();
 
-    // Toast thành công phải xuất hiện
+    // Toast thÃ nh cÃ´ng pháº£i xuáº¥t hiá»‡n
     await expect(
       page.locator("[data-sonner-toast]", {
-        hasText: /Đã nhập.*khách hàng thành công/,
+        hasText: /ÄÃ£ nháº­p.*khÃ¡ch hÃ ng thÃ nh cÃ´ng/,
       })
     ).toBeVisible({ timeout: 15000 });
 
-    // Dialog đóng
+    // Dialog Ä‘Ã³ng
     await expect(
-      page.locator("text=Nhập khách hàng từ KiotViet")
+      page.locator("text=Nháº­p khÃ¡ch hÃ ng tá»« KiotViet")
     ).not.toBeVisible({ timeout: 5000 });
 
-    // Khách hàng mới xuất hiện trong danh sách
+    // KhÃ¡ch hÃ ng má»›i xuáº¥t hiá»‡n trong danh sÃ¡ch
     await expect(page.locator("table tbody")).toContainText(name1, {
       timeout: 10000,
     });
     await expect(page.locator("table tbody")).toContainText(name2);
   });
 
-  // TC-812: SĐT đã có trong DB → bỏ qua, không lỗi, tính vào skipped
-  test("TC-812: SĐT trùng với DB → bỏ qua, toast báo skipped", async ({ page }) => {
+  // TC-812: SÄT Ä‘Ã£ cÃ³ trong DB â†’ bá» qua, khÃ´ng lá»—i, tÃ­nh vÃ o skipped
+  test("TC-812: SÄT trÃ¹ng vá»›i DB â†’ bá» qua, toast bÃ¡o skipped", async ({ page }) => {
     const ts = Date.now().toString().slice(-8);
     const phone = `0977${ts.slice(0, 6)}`;
     const nameFirst = `Dup DB First ${ts}`;
     const nameDup = `Dup DB Second ${ts}`;
 
-    // Import lần 1 để tạo bản ghi gốc
+    // Import láº§n 1 Ä‘á»ƒ táº¡o báº£n ghi gá»‘c
     const file1 = createKiotVietXlsx([
-      ["Cá nhân", "CN", "KH001", nameFirst, phone, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["CÃ¡ nhÃ¢n", "CN", "KH001", nameFirst, phone, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
     ]);
 
     await page.goto("/admin/customers");
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
     await page.locator('input[type="file"]').setInputFiles(file1);
-    await expect(page.locator("text=/Tổng dòng.*1/")).toBeVisible({ timeout: 10000 });
-    await page.getByRole("button", { name: /Import 1 khách hàng/ }).click();
+    await expect(page.locator("text=/Tá»•ng dÃ²ng.*1/")).toBeVisible({ timeout: 10000 });
+    await page.getByRole("button", { name: /Import 1 khÃ¡ch hÃ ng/ }).click();
     await expect(
-      page.locator("[data-sonner-toast]", { hasText: /Đã nhập 1 khách hàng/ })
+      page.locator("[data-sonner-toast]", { hasText: /ÄÃ£ nháº­p 1 khÃ¡ch hÃ ng/ })
     ).toBeVisible({ timeout: 15000 });
 
-    // Import lần 2 — cùng SĐT → phải bị skip
+    // Import láº§n 2 â€” cÃ¹ng SÄT â†’ pháº£i bá»‹ skip
     const file2 = createKiotVietXlsx([
-      ["Cá nhân", "CN", "KH001", nameDup, phone, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["CÃ¡ nhÃ¢n", "CN", "KH001", nameDup, phone, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
     ]);
 
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
     await page.locator('input[type="file"]').setInputFiles(file2);
-    await expect(page.locator("text=/Tổng dòng.*1/")).toBeVisible({ timeout: 10000 });
-    await page.getByRole("button", { name: /Import 1 khách hàng/ }).click();
+    await expect(page.locator("text=/Tá»•ng dÃ²ng.*1/")).toBeVisible({ timeout: 10000 });
+    await page.getByRole("button", { name: /Import 1 khÃ¡ch hÃ ng/ }).click();
 
-    // Toast phải báo 0 imported, 1 skipped
+    // Toast pháº£i bÃ¡o 0 imported, 1 skipped
     await expect(
       page.locator("[data-sonner-toast]", {
-        hasText: /Đã nhập 0 khách hàng thành công\. Bỏ qua 1 do trùng SĐT/,
+        hasText: /ÄÃ£ nháº­p 0 khÃ¡ch hÃ ng thÃ nh cÃ´ng\. Bá» qua 1 do trÃ¹ng SÄT/,
       })
     ).toBeVisible({ timeout: 15000 });
   });
 
-  // TC-814: Giới tính "Nam"/"Nữ" lưu đúng; giá trị khác → null (kiểm qua preview)
-  test("TC-814: Giới tính Nam/Nữ hiển thị đúng trong preview", async ({ page }) => {
+  // TC-814: Giá»›i tÃ­nh "Nam"/"Ná»¯" lÆ°u Ä‘Ãºng; giÃ¡ trá»‹ khÃ¡c â†’ null (kiá»ƒm qua preview)
+  test("TC-814: Giá»›i tÃ­nh Nam/Ná»¯ hiá»ƒn thá»‹ Ä‘Ãºng trong preview", async ({ page }) => {
     const ts = Date.now().toString().slice(-8);
 
     const file = createKiotVietXlsx([
-      ["Cá nhân", "CN", "KH001", `Nam Test ${ts}`, `0988${ts.slice(0,6)}`, "", "", "", "", "", "", "", "Nam", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
-      ["Cá nhân", "CN", "KH002", `Nu Test ${ts}`, `0999${ts.slice(0,6)}`, "", "", "", "", "", "", "", "Nữ", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
-      ["Cá nhân", "CN", "KH003", `Other Test ${ts}`, `0911${ts.slice(0,6)}`, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["CÃ¡ nhÃ¢n", "CN", "KH001", `Nam Test ${ts}`, `0988${ts.slice(0,6)}`, "", "", "", "", "", "", "", "Nam", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["CÃ¡ nhÃ¢n", "CN", "KH002", `Nu Test ${ts}`, `0999${ts.slice(0,6)}`, "", "", "", "", "", "", "", "Ná»¯", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["CÃ¡ nhÃ¢n", "CN", "KH003", `Other Test ${ts}`, `0911${ts.slice(0,6)}`, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
     ]);
 
     await page.goto("/admin/customers");
-    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.getByRole("button", { name: /Nháº­p tá»« KiotViet/ }).click();
     await page.locator('input[type="file"]').setInputFiles(file);
 
-    await expect(page.locator("text=/Tổng dòng.*3/")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=/Tá»•ng dÃ²ng.*3/")).toBeVisible({ timeout: 10000 });
 
-    const dialog814 = page.locator("div.fixed").filter({ hasText: "Nhập khách hàng từ KiotViet" });
+    const dialog814 = page.locator("div.fixed").filter({ hasText: "Nháº­p khÃ¡ch hÃ ng tá»« KiotViet" });
     const table = dialog814.locator("table");
     const rows = table.locator("tbody tr");
 
-    // Dòng 1: "Nam"
+    // DÃ²ng 1: "Nam"
     await expect(rows.nth(0).locator("td").nth(6)).toContainText("Nam");
-    // Dòng 2: "Nữ"
-    await expect(rows.nth(1).locator("td").nth(6)).toContainText("Nữ");
-    // Dòng 3: trống → "—"
-    await expect(rows.nth(2).locator("td").nth(6)).toContainText("—");
+    // DÃ²ng 2: "Ná»¯"
+    await expect(rows.nth(1).locator("td").nth(6)).toContainText("Ná»¯");
+    // DÃ²ng 3: trá»‘ng â†’ "â€”"
+    await expect(rows.nth(2).locator("td").nth(6)).toContainText("â€”");
 
-    await page.getByRole("button", { name: "Hủy" }).click();
+    await page.getByRole("button", { name: "Há»§y" }).click();
   });
 });
+

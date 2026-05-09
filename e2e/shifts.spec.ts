@@ -3,7 +3,7 @@
 async function login(page: import("@playwright/test").Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill("admin@bongshop.vn");
-  await page.getByLabel("Mật khẩu").fill("admin123");
+  await page.getByLabel("Mật khẩu").fill("bongshop");
   await page.getByRole("button", { name: "Đăng nhập" }).click();
   await page.waitForURL((url) => url.pathname.startsWith("/admin"), { timeout: 15000 });
 }
@@ -199,3 +199,4 @@ test.describe("US-003: Ca làm việc", () => {
     ).toBeVisible({ timeout: 5000 });
   });
 });
+

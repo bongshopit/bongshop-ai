@@ -1,11 +1,11 @@
-import { test, expect } from "@playwright/test";
+﻿import { test, expect } from "@playwright/test";
 
-// Helper: login trước mỗi test
+// Helper: login trÆ°á»›c má»—i test
 async function login(page: import("@playwright/test").Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill("admin@bongshop.vn");
-  await page.getByLabel("Mật khẩu").fill("admin123");
-  await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await page.getByLabel("Máº­t kháº©u").fill("bongshop");
+  await page.getByRole("button", { name: "ÄÄƒng nháº­p" }).click();
   await page.waitForURL("**/admin", { timeout: 10000 });
 }
 
@@ -14,29 +14,29 @@ test.describe("Dashboard", () => {
     await login(page);
   });
 
-  test("TC-005: Dashboard hiển thị 4 stat cards", async ({ page }) => {
+  test("TC-005: Dashboard hiá»ƒn thá»‹ 4 stat cards", async ({ page }) => {
     await expect(
       page.locator("h1", { hasText: "Dashboard" })
     ).toBeVisible();
 
-    // 4 stat cards (dùng heading h3 để tránh trùng với sidebar links)
+    // 4 stat cards (dÃ¹ng heading h3 Ä‘á»ƒ trÃ¡nh trÃ¹ng vá»›i sidebar links)
     const statCards = page.locator("main");
-    await expect(statCards.getByRole("heading", { name: "Nhân viên" })).toBeVisible();
-    await expect(statCards.getByText("Chấm công hôm nay")).toBeVisible();
-    await expect(statCards.getByRole("heading", { name: "Sản phẩm" })).toBeVisible();
-    await expect(statCards.getByRole("heading", { name: "Khách hàng" })).toBeVisible();
+    await expect(statCards.getByRole("heading", { name: "NhÃ¢n viÃªn" })).toBeVisible();
+    await expect(statCards.getByText("Cháº¥m cÃ´ng hÃ´m nay")).toBeVisible();
+    await expect(statCards.getByRole("heading", { name: "Sáº£n pháº©m" })).toBeVisible();
+    await expect(statCards.getByRole("heading", { name: "KhÃ¡ch hÃ ng" })).toBeVisible();
   });
 
-  test("TC-006: Sidebar navigation hoạt động", async ({ page }) => {
+  test("TC-006: Sidebar navigation hoáº¡t Ä‘á»™ng", async ({ page }) => {
     // Check sidebar links exist
     const sidebarLinks = [
-      { text: "Nhân viên", url: "/admin/employees" },
-      { text: "Chấm công", url: "/admin/attendance" },
-      { text: "Ca làm việc", url: "/admin/shifts" },
-      { text: "Tồn kho", url: "/admin/inventory" },
-      { text: "Sổ quỹ", url: "/admin/cashbook" },
-      { text: "Lương", url: "/admin/payroll" },
-      { text: "Khách hàng", url: "/admin/customers" },
+      { text: "NhÃ¢n viÃªn", url: "/admin/employees" },
+      { text: "Cháº¥m cÃ´ng", url: "/admin/attendance" },
+      { text: "Ca lÃ m viá»‡c", url: "/admin/shifts" },
+      { text: "Tá»“n kho", url: "/admin/inventory" },
+      { text: "Sá»• quá»¹", url: "/admin/cashbook" },
+      { text: "LÆ°Æ¡ng", url: "/admin/payroll" },
+      { text: "KhÃ¡ch hÃ ng", url: "/admin/customers" },
     ];
 
     for (const link of sidebarLinks) {
@@ -44,11 +44,12 @@ test.describe("Dashboard", () => {
       await expect(sidebarLink).toBeVisible();
     }
 
-    // Click "Nhân viên" and verify navigation
-    await page.locator("aside a", { hasText: "Nhân viên" }).click();
+    // Click "NhÃ¢n viÃªn" and verify navigation
+    await page.locator("aside a", { hasText: "NhÃ¢n viÃªn" }).click();
     await expect(page).toHaveURL(/\/admin\/employees/);
     await expect(
-      page.locator("h1", { hasText: "Quản lý nhân viên" })
+      page.locator("h1", { hasText: "Quáº£n lÃ½ nhÃ¢n viÃªn" })
     ).toBeVisible();
   });
 });
+

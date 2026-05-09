@@ -126,7 +126,7 @@ src/
 
 | US | Tên tính năng | Status |
 |----|---------------|--------|
-| US-001 | Quản lý nhân viên | Completed |
+| US-001 | Quản lý nhân viên | Verified (Sprint 3 — optimize) |
 | US-002 | Chấm công | Verified |
 | US-003 | Ca làm việc | Verified |
 | US-004 | Tồn kho | Verified |

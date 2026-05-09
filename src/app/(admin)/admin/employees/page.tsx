@@ -20,14 +20,12 @@ const PAGE_SIZE = 20;
 
 interface SearchParams {
   q?: string;
-  department?: string;
-  status?: string;
   page?: string;
 }
 
 async function getEmployees(params: SearchParams) {
   const page = Math.max(1, parseInt(params.page ?? "1") || 1);
-  const where: Prisma.EmployeeWhereInput = {};
+  const where: Prisma.EmployeeWhereInput = { isActive: true };
 
   if (params.q) {
     where.OR = [
@@ -35,16 +33,6 @@ async function getEmployees(params: SearchParams) {
       { lastName: { contains: params.q, mode: "insensitive" } },
       { employeeCode: { contains: params.q, mode: "insensitive" } },
     ];
-  }
-
-  if (params.department) {
-    where.department = params.department;
-  }
-
-  if (params.status === "active") {
-    where.isActive = true;
-  } else if (params.status === "inactive") {
-    where.isActive = false;
   }
 
   const [data, total] = await Promise.all([
@@ -63,22 +51,9 @@ async function getEmployees(params: SearchParams) {
   return { data, total, page: validPage, totalPages };
 }
 
-async function getDepartments() {
-  const result = await prisma.employee.findMany({
-    select: { department: true },
-    distinct: ["department"],
-    orderBy: { department: "asc" },
-  });
-  return result.map((r) => r.department).filter((d): d is string => d !== null);
-}
-
 async function EmployeesTable({ searchParams }: { searchParams: SearchParams }) {
   const { data: employees, total, page, totalPages } = await getEmployees(searchParams);
-  const spParams = {
-    q: searchParams.q,
-    department: searchParams.department,
-    status: searchParams.status,
-  } as Record<string, string>;
+  const spParams = { q: searchParams.q } as Record<string, string>;
 
   return (
     <>
@@ -91,67 +66,45 @@ async function EmployeesTable({ searchParams }: { searchParams: SearchParams }) 
                 <th className="px-4 py-3 font-medium">Họ tên</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">SĐT</th>
-                <th className="px-4 py-3 font-medium">Phòng ban</th>
-                <th className="px-4 py-3 font-medium">Chức vụ</th>
-                <th className="px-4 py-3 font-medium">Lương/giờ</th>
-                <th className="px-4 py-3 font-medium">Trạng thái</th>
+                <th className="px-4 py-3 font-medium">Loại lương</th>
+                <th className="px-4 py-3 font-medium">Mức lương</th>
                 <th className="px-4 py-3 font-medium">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {employees.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={9}
-                    className="px-4 py-10 text-center text-gray-400"
-                  >
+                  <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
                     Không tìm thấy nhân viên nào
                   </td>
                 </tr>
               ) : (
                 employees.map((emp) => (
-                  <tr
-                    key={emp.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {emp.employeeCode}
-                    </td>
-                    <td className="px-4 py-3 text-gray-700">
-                      {emp.lastName} {emp.firstName}
-                    </td>
+                  <tr key={emp.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-900">{emp.employeeCode}</td>
+                    <td className="px-4 py-3 text-gray-700">{emp.lastName} {emp.firstName}</td>
                     <td className="px-4 py-3 text-gray-500">{emp.email}</td>
                     <td className="px-4 py-3 text-gray-500">{emp.phone}</td>
-                    <td className="px-4 py-3 text-gray-500">
-                      {emp.department}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">{emp.position}</td>
-                    <td className="px-4 py-3 text-gray-500">
-                      {Number(emp.hourlyRate).toLocaleString("vi-VN")}đ
-                    </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          emp.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {emp.isActive ? "Đang làm" : "Đã nghỉ"}
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        emp.salaryType === "MONTHLY"
+                          ? "bg-purple-100 text-purple-700"
+                          : "bg-blue-100 text-blue-700"
+                      }`}>
+                        {emp.salaryType === "MONTHLY" ? "Theo tháng" : "Theo giờ"}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700">
+                      {emp.salaryType === "MONTHLY"
+                        ? `${Number(emp.monthlySalary).toLocaleString("vi-VN")}đ/tháng`
+                        : `${Number(emp.hourlyRate).toLocaleString("vi-VN")}đ/giờ`}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <Link
-                          href={`/admin/employees/${emp.id}`}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                        >
+                        <Link href={`/admin/employees/${emp.id}`} className="text-blue-600 hover:text-blue-800 text-sm font-medium">
                           Xem
                         </Link>
-                        <Link
-                          href={`/admin/employees/${emp.id}/edit`}
-                          className="text-gray-600 hover:text-gray-900 text-sm font-medium"
-                        >
+                        <Link href={`/admin/employees/${emp.id}/edit`} className="text-gray-600 hover:text-gray-900 text-sm font-medium">
                           Sửa
                         </Link>
                       </div>
@@ -178,11 +131,6 @@ async function EmployeesTable({ searchParams }: { searchParams: SearchParams }) 
   );
 }
 
-async function EmployeesFilter({ searchParams }: { searchParams: SearchParams }) {
-  const departments = await getDepartments();
-  return <EmployeeSearch departments={departments} />;
-}
-
 export default function EmployeesPage({
   searchParams,
 }: {
@@ -201,20 +149,12 @@ export default function EmployeesPage({
       </div>
 
       <Suspense
-        fallback={
-          <div className="flex flex-wrap gap-3">
-            <div className="h-10 w-64 bg-gray-200 rounded animate-pulse" />
-            <div className="h-10 w-40 bg-gray-200 rounded animate-pulse" />
-            <div className="h-10 w-36 bg-gray-200 rounded animate-pulse" />
-          </div>
-        }
+        fallback={<div className="h-10 w-64 bg-gray-200 rounded animate-pulse" />}
       >
-        <EmployeesFilter searchParams={searchParams} />
+        <EmployeeSearch />
       </Suspense>
 
-      <Suspense
-        fallback={<TableSkeleton columns={9} rows={10} />}
-      >
+      <Suspense fallback={<TableSkeleton columns={7} rows={10} />}>
         <EmployeesTable searchParams={searchParams} />
       </Suspense>
     </div>

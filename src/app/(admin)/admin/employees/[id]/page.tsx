@@ -1,13 +1,12 @@
-import { Metadata } from "next";
+﻿import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-
-export const dynamic = "force-dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmployeeStatusButton } from "@/components/shared/employee-status-button";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -36,17 +35,18 @@ export default async function EmployeeDetailPage({
 
   if (!employee) notFound();
 
+  const salaryLabel =
+    employee.salaryType === "MONTHLY"
+      ? `${Number(employee.monthlySalary).toLocaleString("vi-VN")}đ/tháng`
+      : `${Number(employee.hourlyRate).toLocaleString("vi-VN")}đ/giờ`;
+
   const fields = [
     { label: "Mã nhân viên", value: employee.employeeCode },
     { label: "Họ tên", value: `${employee.lastName} ${employee.firstName}` },
     { label: "Email", value: employee.email },
     { label: "Số điện thoại", value: employee.phone },
-    { label: "Phòng ban", value: employee.department },
-    { label: "Chức vụ", value: employee.position },
-    {
-      label: "Lương giờ",
-      value: `${Number(employee.hourlyRate).toLocaleString("vi-VN")}đ`,
-    },
+    { label: "Loại lương", value: employee.salaryType === "MONTHLY" ? "Theo tháng" : "Theo giờ" },
+    { label: "Mức lương", value: salaryLabel },
     {
       label: "Ngày tạo",
       value: new Date(employee.createdAt).toLocaleDateString("vi-VN"),
@@ -64,29 +64,15 @@ export default async function EmployeeDetailPage({
           Quay lại danh sách
         </Link>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">
-              {employee.lastName} {employee.firstName}
-            </h1>
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                employee.isActive
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              {employee.isActive ? "Đang làm" : "Đã nghỉ"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/admin/employees/${employee.id}/edit`}>
-                <Pencil className="h-4 w-4 mr-1" />
-                Sửa
-              </Link>
-            </Button>
-            <EmployeeStatusButton id={employee.id} isActive={employee.isActive} />
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {employee.lastName} {employee.firstName}
+          </h1>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/admin/employees/${employee.id}/edit`}>
+              <Pencil className="h-4 w-4 mr-1" />
+              Sửa
+            </Link>
+          </Button>
         </div>
       </div>
 

@@ -3,7 +3,7 @@
 async function login(page: import("@playwright/test").Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill("admin@bongshop.vn");
-  await page.getByLabel("Mật khẩu").fill("admin123");
+  await page.getByLabel("Mật khẩu").fill("bongshop");
   await page.getByRole("button", { name: "Đăng nhập" }).click();
   await page.waitForURL("**/admin", { timeout: 10000 });
 }
@@ -141,3 +141,4 @@ test.describe("US-002: Chấm công", () => {
     ).toBeAttached();
   });
 });
+

@@ -28,7 +28,9 @@ export async function calculatePayroll(formData: FormData): Promise<ActionState>
     where: { isActive: true },
     select: {
       id: true,
+      salaryType: true,
       hourlyRate: true,
+      monthlySalary: true,
       allowance: true,
     },
   });
@@ -66,11 +68,15 @@ export async function calculatePayroll(formData: FormData): Promise<ActionState>
     employees
       .filter((emp) => !paidSet.has(emp.id))
       .map((emp) => {
-        const totalHours = hoursMap.get(emp.id) ?? 0;
+        const totalHours = emp.salaryType === "MONTHLY" ? 0 : (hoursMap.get(emp.id) ?? 0);
         const hourlyRate = Number(emp.hourlyRate);
+        const monthlySalary = Number(emp.monthlySalary ?? 0);
         const allowance = Number(emp.allowance);
         const deduction = 0;
-        const grossSalary = totalHours * hourlyRate;
+        const grossSalary =
+          emp.salaryType === "MONTHLY"
+            ? monthlySalary
+            : totalHours * hourlyRate;
         const netSalary = grossSalary + allowance - deduction;
 
         return prisma.payroll.upsert({
