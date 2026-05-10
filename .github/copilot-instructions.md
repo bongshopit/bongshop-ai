@@ -142,6 +142,10 @@ src/
 | US-014 | Sửa lỗi Pagination & Cải thiện Hiệu năng Webapp | Verified |
 | US-015 | Progressive Loading UI | Verified (Sprint 2 — fix encoding + refined shell) |
 | US-016 | Gửi hàng khách hàng | Verified |
+| US-017 | Responsive Design | Verified |
+| US-018 | Xóa dữ liệu | Verified |
+| US-019 | Cải thiện Dashboard | Verified (Sprint 4) |
+| US-020 | Backup/Restore dữ liệu (gzip compression) | Verified (Sprint 4 — gzip .json.gz) |
 
 ---
 
