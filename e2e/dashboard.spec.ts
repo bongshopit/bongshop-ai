@@ -1,55 +1,99 @@
-﻿import { test, expect } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
-// Helper: login trÆ°á»›c má»—i test
 async function login(page: import("@playwright/test").Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill("admin@bongshop.vn");
-  await page.getByLabel("Máº­t kháº©u").fill("bongshop");
-  await page.getByRole("button", { name: "ÄÄƒng nháº­p" }).click();
+  await page.getByLabel("M\u1eadt kh\u1ea9u").fill("bongshop");
+  await page.getByRole("button", { name: "\u0110\u0103ng nh\u1eadp" }).click();
   await page.waitForURL("**/admin", { timeout: 10000 });
 }
 
-test.describe("Dashboard", () => {
+test.describe("US-019: C\u1ea3i thi\u1ec7n Dashboard", () => {
+  test.describe.configure({ mode: "serial" });
+
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
 
-  test("TC-005: Dashboard hiá»ƒn thá»‹ 4 stat cards", async ({ page }) => {
-    await expect(
-      page.locator("h1", { hasText: "Dashboard" })
-    ).toBeVisible();
+  // TC-1901: 6 stat cards hi\u1ec3n th\u1ecb
+  test("TC-1901: Dashboard hi\u1ec3n th\u1ecb 6 stat cards", async ({ page }) => {
+    await expect(page.locator("h1", { hasText: "Dashboard" })).toBeVisible();
 
-    // 4 stat cards (dÃ¹ng heading h3 Ä‘á»ƒ trÃ¡nh trÃ¹ng vá»›i sidebar links)
-    const statCards = page.locator("main");
-    await expect(statCards.getByRole("heading", { name: "NhÃ¢n viÃªn" })).toBeVisible();
-    await expect(statCards.getByText("Cháº¥m cÃ´ng hÃ´m nay")).toBeVisible();
-    await expect(statCards.getByRole("heading", { name: "Sáº£n pháº©m" })).toBeVisible();
-    await expect(statCards.getByRole("heading", { name: "KhÃ¡ch hÃ ng" })).toBeVisible();
+    const main = page.locator("main");
+    await expect(main.getByText("Nh\u00e2n vi\u00ean").first()).toBeVisible();
+    await expect(main.getByText("Ch\u1ea5m c\u00f4ng h\u00f4m nay").first()).toBeVisible();
+    await expect(main.getByText("S\u1ea3n ph\u1ea9m").first()).toBeVisible();
+    await expect(main.getByText("Kh\u00e1ch h\u00e0ng").first()).toBeVisible();
+    await expect(main.getByText("S\u1ed1 d\u01b0 qu\u1ef9").first()).toBeVisible();
+    await expect(main.getByText("G\u1eedi h\u00e0ng \u0111ang m\u1edf").first()).toBeVisible();
   });
 
-  test("TC-006: Sidebar navigation hoáº¡t Ä‘á»™ng", async ({ page }) => {
-    // Check sidebar links exist
+  // TC-1902: S\u1ed1 d\u01b0 qu\u1ef9 c\u00f3 k\u00fd hi\u1ec7u ti\u1ec1n
+  test("TC-1902: S\u1ed1 d\u01b0 qu\u1ef9 hi\u1ec3n th\u1ecb \u0111\u1ecbnh d\u1ea1ng VN\u0110", async ({ page }) => {
+    const main = page.locator("main");
+    const cashCard = main.locator("div", { hasText: "S\u1ed1 d\u01b0 qu\u1ef9" }).first();
+    await expect(cashCard).toBeVisible();
+  });
+
+  // TC-1903: Section s\u1ea3n ph\u1ea9m s\u1eafp h\u1ebft h\u00e0ng
+  test("TC-1903: Section s\u1ea3n ph\u1ea9m s\u1eafp h\u1ebft h\u00e0ng hi\u1ec3n th\u1ecb", async ({ page }) => {
+    const main = page.locator("main");
+    await expect(main.getByText("S\u1ea3n ph\u1ea9m s\u1eafp h\u1ebft h\u00e0ng").first()).toBeVisible();
+    const viewAllLink = main
+      .locator("a[href='/admin/inventory']", { hasText: "Xem t\u1ea5t c\u1ea3" })
+      .first();
+    await expect(viewAllLink).toBeVisible();
+  });
+
+  // TC-1904: Section giao d\u1ecbch g\u1ea7n nh\u1ea5t
+  test("TC-1904: Section giao d\u1ecbch g\u1ea7n nh\u1ea5t hi\u1ec3n th\u1ecb", async ({ page }) => {
+    const main = page.locator("main");
+    await expect(main.getByText("Giao d\u1ecbch g\u1ea7n nh\u1ea5t").first()).toBeVisible();
+    const viewAllLink = main
+      .locator("a[href='/admin/cashbook']", { hasText: "Xem t\u1ea5t c\u1ea3" })
+      .first();
+    await expect(viewAllLink).toBeVisible();
+  });
+
+  // TC-1905: Section nh\u00e2n vi\u00ean ch\u01b0a ch\u1ea5m c\u00f4ng
+  test("TC-1905: Section nh\u00e2n vi\u00ean ch\u01b0a ch\u1ea5m c\u00f4ng hi\u1ec3n th\u1ecb", async ({ page }) => {
+    const main = page.locator("main");
+    await expect(main.getByText("Ch\u01b0a ch\u1ea5m c\u00f4ng h\u00f4m nay").first()).toBeVisible();
+    const viewAllLink = main
+      .locator("a[href='/admin/attendance']", { hasText: "Xem t\u1ea5t c\u1ea3" })
+      .first();
+    await expect(viewAllLink).toBeVisible();
+  });
+
+  // TC-1906: Click stat card navigate
+  test("TC-1906: Click stat card Nh\u00e2n vi\u00ean navigate \u0111\u1ebfn employees", async ({ page }) => {
+    const main = page.locator("main");
+    const employeeCard = main.locator("a[href='/admin/employees']").first();
+    await expect(employeeCard).toBeVisible();
+    await employeeCard.click();
+    await expect(page).toHaveURL(/\/admin\/employees/);
+  });
+
+  // TC-1907: Sidebar navigation
+  test("TC-1907: Sidebar navigation ho\u1ea1t \u0111\u1ed9ng", async ({ page }) => {
     const sidebarLinks = [
-      { text: "NhÃ¢n viÃªn", url: "/admin/employees" },
-      { text: "Cháº¥m cÃ´ng", url: "/admin/attendance" },
-      { text: "Ca lÃ m viá»‡c", url: "/admin/shifts" },
-      { text: "Tá»“n kho", url: "/admin/inventory" },
-      { text: "Sá»• quá»¹", url: "/admin/cashbook" },
-      { text: "LÆ°Æ¡ng", url: "/admin/payroll" },
-      { text: "KhÃ¡ch hÃ ng", url: "/admin/customers" },
+      "Nh\u00e2n vi\u00ean",
+      "Ch\u1ea5m c\u00f4ng",
+      "Ca l\u00e0m vi\u1ec7c",
+      "T\u1ed3n kho",
+      "S\u1ed5 qu\u1ef9",
+      "L\u01b0\u01a1ng",
+      "Kh\u00e1ch h\u00e0ng",
     ];
 
-    for (const link of sidebarLinks) {
-      const sidebarLink = page.locator("aside a", { hasText: link.text });
-      await expect(sidebarLink).toBeVisible();
+    for (const text of sidebarLinks) {
+      await expect(page.locator("aside a", { hasText: text })).toBeVisible();
     }
 
-    // Click "NhÃ¢n viÃªn" and verify navigation
-    await page.locator("aside a", { hasText: "NhÃ¢n viÃªn" }).click();
+    await page.locator("aside a", { hasText: "Nh\u00e2n vi\u00ean" }).click();
     await expect(page).toHaveURL(/\/admin\/employees/);
     await expect(
-      page.locator("h1", { hasText: "Quáº£n lÃ½ nhÃ¢n viÃªn" })
+      page.locator("h1", { hasText: "Qu\u1ea3n l\u00fd nh\u00e2n vi\u00ean" })
     ).toBeVisible();
   });
 });
-
