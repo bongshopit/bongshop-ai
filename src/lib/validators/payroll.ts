@@ -46,5 +46,4 @@ export const payrollAdjustSchema = z.object({
 });
 
 export type PayrollCalculateInput = z.infer<typeof payrollCalculateSchema>;
-export type PayrollAdjustmentInput = z.infer<typeof payrollAdjustmentSchema>;
 export type PayrollAdjustInput = z.infer<typeof payrollAdjustSchema>;
