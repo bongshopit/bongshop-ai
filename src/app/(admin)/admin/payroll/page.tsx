@@ -1,5 +1,4 @@
 ﻿import { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
@@ -42,6 +41,15 @@ function formatCurrency(value: number | { toString(): string }) {
   });
 }
 
+async function getActiveEmployees() {
+  const employees = await prisma.employee.findMany({
+    where: { isActive: true },
+    select: { id: true, firstName: true, lastName: true },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+  });
+  return employees.map((e) => ({ id: e.id, name: `${e.lastName} ${e.firstName}` }));
+}
+
 async function getPayrolls(month: number, year: number, page: number) {
   const where: Prisma.PayrollWhereInput = { month, year };
 
@@ -81,24 +89,19 @@ async function PayrollData({ searchParams }: { searchParams: SearchParams }) {
 
   const { data: payrolls, total, page, totalPages } = await getPayrolls(month, year, pageNum);
 
-  const totalGross = payrolls.reduce((s, p) => s + Number(p.grossSalary), 0);
-  const totalNet = payrolls.reduce((s, p) => s + Number(p.netSalary), 0);
+  const totalSalary = payrolls.reduce((s, p) => s + Number(p.netSalary), 0);
 
   return (
     <div className="space-y-4">
       {payrolls.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="rounded-lg border bg-white p-4">
             <p className="text-xs text-gray-500">Số nhân viên</p>
             <p className="text-2xl font-bold text-gray-900">{payrolls.length}</p>
           </div>
           <div className="rounded-lg border bg-white p-4">
-            <p className="text-xs text-gray-500">Tổng gross</p>
-            <p className="text-xl font-bold text-gray-900">{formatCurrency(totalGross)}</p>
-          </div>
-          <div className="rounded-lg border bg-white p-4">
-            <p className="text-xs text-gray-500">Tổng net</p>
-            <p className="text-xl font-bold text-blue-700">{formatCurrency(totalNet)}</p>
+            <p className="text-xs text-gray-500">Tổng lương</p>
+            <p className="text-xl font-bold text-blue-700">{formatCurrency(totalSalary)}</p>
           </div>
         </div>
       )}
@@ -112,9 +115,7 @@ async function PayrollData({ searchParams }: { searchParams: SearchParams }) {
                 <th className="px-4 py-3 font-medium">Họ tên</th>
                 <th className="px-4 py-3 font-medium">Phòng ban</th>
                 <th className="px-4 py-3 font-medium text-right">Giờ làm</th>
-                <th className="px-4 py-3 font-medium text-right">Đơn giá</th>
-                <th className="px-4 py-3 font-medium text-right">Gross</th>
-                <th className="px-4 py-3 font-medium text-right">Net</th>
+                <th className="px-4 py-3 font-medium text-right">Lương</th>
                 <th className="px-4 py-3 font-medium">Trạng thái</th>
                 <th className="px-4 py-3 font-medium">Thao tác</th>
               </tr>
@@ -122,7 +123,7 @@ async function PayrollData({ searchParams }: { searchParams: SearchParams }) {
             <tbody className="divide-y divide-gray-100">
               {payrolls.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-gray-400">
+                  <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
                     Chưa có bảng lương tháng {month}/{year}. Nhấn “Tính lương” để tổng hợp.
                   </td>
                 </tr>
@@ -139,12 +140,6 @@ async function PayrollData({ searchParams }: { searchParams: SearchParams }) {
                     <td className="px-4 py-3 text-right text-gray-700">
                       {Number(p.totalHours).toFixed(1)}h
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-700">
-                      {formatCurrency(p.hourlyRate)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">
-                      {formatCurrency(p.grossSalary)}
-                    </td>
                     <td className="px-4 py-3 text-right font-semibold text-blue-700">
                       {formatCurrency(p.netSalary)}
                     </td>
@@ -159,12 +154,14 @@ async function PayrollData({ searchParams }: { searchParams: SearchParams }) {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <Link
+                        {/* Dùng <a> thay <Link> để bypass Next.js router cache (v14.1.0 không hỗ trợ staleTimes)
+                            Hard navigation đảm bảo trang detail luôn được fetch mới từ server */}
+                        <a
                           href={`/admin/payroll/${p.id}`}
                           className="text-blue-600 hover:underline text-xs"
                         >
                           Chi tiết
-                        </Link>
+                        </a>
                         <PayrollStatusButton id={p.id} status={p.status} />
                       </div>
                     </td>
@@ -198,12 +195,12 @@ function PayrollDataSkeleton() {
           <div key={i} className="rounded-lg border bg-white p-4 h-16 animate-pulse bg-gray-50" />
         ))}
       </div>
-      <TableSkeleton columns={9} rows={10} />
+      <TableSkeleton columns={7} rows={10} />
     </div>
   );
 }
 
-export default function PayrollPage({
+export default async function PayrollPage({
   searchParams,
 }: {
   searchParams: SearchParams;
@@ -212,6 +209,9 @@ export default function PayrollPage({
   const month = parseInt(searchParams.month ?? String(now.getMonth() + 1), 10);
   const year = parseInt(searchParams.year ?? String(now.getFullYear()), 10);
 
+  // Fetch employees for the calculate form (AC-6.1b)
+  const employees = await getActiveEmployees();
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Bảng lương</h1>
@@ -219,10 +219,10 @@ export default function PayrollPage({
       {/* Calculate payroll form — immediate */}
       <div className="rounded-lg border bg-white p-5">
         <p className="text-sm text-gray-500 mb-3">
-          Chọn tháng/năm và nhấn <strong>Tính lương</strong> để tổng hợp giờ làm từ chấm công.
+          Chọn tháng/năm và nhân viên, nhấn <strong>Tính lương</strong> để tổng hợp giờ làm từ chấm công.
           Phiếu đã <span className="text-green-700 font-medium">Đã trả</span> sẽ không bị tính lại.
         </p>
-        <CalculatePayrollForm defaultMonth={month} defaultYear={year} />
+        <CalculatePayrollForm defaultMonth={month} defaultYear={year} employees={employees} />
       </div>
 
       {/* Month/year selector — immediate, no DB dependency */}

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 import { PayrollStatusButton } from "@/components/shared/payroll-status-button";
+import { PayrollAdjustmentForm } from "@/components/shared/payroll-adjustment-form";
 
 interface Props {
   params: { id: string };
@@ -54,18 +55,20 @@ export default async function PayrollDetailPage({ params }: Props) {
           position: true,
         },
       },
+      adjustments: {
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
   if (!payroll) notFound();
 
-  const rows = [
+  const canEdit = payroll.status === "DRAFT";
+
+  const summaryRows = [
     { label: "Tổng giờ làm", value: `${Number(payroll.totalHours).toFixed(2)} giờ` },
     { label: "Đơn giá giờ", value: formatCurrency(payroll.hourlyRate) },
-    { label: "Lương gross (giờ × đơn giá)", value: formatCurrency(payroll.grossSalary), bold: true },
-    { label: "Phụ cấp", value: `+ ${formatCurrency(payroll.allowance)}`, color: "text-green-700" },
-    { label: "Khấu trừ", value: `- ${formatCurrency(payroll.deduction)}`, color: "text-red-700" },
-    { label: "Lương net", value: formatCurrency(payroll.netSalary), bold: true, color: "text-blue-700" },
+    { label: "Lương cơ bản", value: formatCurrency(payroll.grossSalary), bold: true },
   ];
 
   return (
@@ -108,21 +111,54 @@ export default async function PayrollDetailPage({ params }: Props) {
       {/* Salary breakdown — AC-6.4 */}
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="px-6 py-4 bg-gray-50 border-b">
-          <h2 className="font-semibold text-gray-700">Chi tiết tính lương</h2>
+          <h2 className="font-semibold text-gray-700">Chi tiết lương</h2>
         </div>
         <div className="divide-y divide-gray-100">
-          {rows.map((row) => (
+          {summaryRows.map((row) => (
             <div key={row.label} className="flex items-center justify-between px-6 py-3">
               <span className="text-sm text-gray-600">{row.label}</span>
-              <span
-                className={`text-sm ${row.bold ? "font-bold" : "font-medium"} ${row.color ?? "text-gray-900"}`}
-              >
+              <span className={`text-sm ${row.bold ? "font-bold" : "font-medium"} text-gray-900`}>
                 {row.value}
               </span>
             </div>
           ))}
+          {/* Tổng cộng / trừ từ adjustments */}
+          {Number(payroll.allowance) > 0 && (
+            <div className="flex items-center justify-between px-6 py-3">
+              <span className="text-sm text-gray-600">Tổng cộng thêm</span>
+              <span className="text-sm font-medium text-green-700">
+                + {formatCurrency(payroll.allowance)}
+              </span>
+            </div>
+          )}
+          {Number(payroll.deduction) > 0 && (
+            <div className="flex items-center justify-between px-6 py-3">
+              <span className="text-sm text-gray-600">Tổng khấu trừ</span>
+              <span className="text-sm font-medium text-red-700">
+                − {formatCurrency(payroll.deduction)}
+              </span>
+            </div>
+          )}
+          <div className="flex items-center justify-between px-6 py-4 bg-blue-50">
+            <span className="text-sm font-bold text-gray-700">Lương</span>
+            <span className="text-lg font-bold text-blue-700">
+              {formatCurrency(payroll.netSalary)}
+            </span>
+          </div>
         </div>
       </div>
+
+      {/* Khoản điều chỉnh — AC-6.5/6.6 */}
+      <PayrollAdjustmentForm
+        payrollId={payroll.id}
+        adjustments={payroll.adjustments.map((a) => ({
+          id: a.id,
+          label: a.label,
+          amount: a.amount.toString(),
+          type: a.type,
+        }))}
+        canEdit={canEdit}
+      />
 
       {/* Actions */}
       <div className="flex gap-3">

@@ -5,14 +5,21 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { calculatePayroll, type ActionState } from "@/actions/payroll";
 
+interface Employee {
+  id: string;
+  name: string;
+}
+
 interface CalculatePayrollFormProps {
   defaultMonth: number;
   defaultYear: number;
+  employees: Employee[];
 }
 
 export function CalculatePayrollForm({
   defaultMonth,
   defaultYear,
+  employees,
 }: CalculatePayrollFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -23,6 +30,10 @@ export function CalculatePayrollForm({
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    // Nếu "Tất cả" được chọn (value = ""), không gửi employeeId
+    if (!formData.get("employeeId")) {
+      formData.delete("employeeId");
+    }
     setError("");
     setFieldErrors({});
     setSuccess("");
@@ -30,7 +41,12 @@ export function CalculatePayrollForm({
     startTransition(async () => {
       const result: ActionState = await calculatePayroll(formData);
       if (result === null || (result && !result.error && !result.fieldErrors)) {
-        setSuccess(`Đã tính lương cho ${result?.count ?? 0} nhân viên.`);
+        const count = result?.count ?? 0;
+        setSuccess(
+          count === 0
+            ? "Không có phiếu nào được tính (có thể đã PAID hoặc không tìm thấy nhân viên)."
+            : `Đã tính lương cho ${count} nhân viên.`
+        );
         router.refresh();
         return;
       }
@@ -87,6 +103,22 @@ export function CalculatePayrollForm({
         {fieldErrors.year?.map((err) => (
           <p key={err} className="text-xs text-red-500">{err}</p>
         ))}
+      </div>
+
+      {/* AC-6.1b: Dropdown chọn nhân viên — giá trị "" = tất cả */}
+      <div className="space-y-1">
+        <label htmlFor="employeeId" className="block text-xs text-gray-500">Nhân viên</label>
+        <select
+          id="employeeId"
+          name="employeeId"
+          defaultValue=""
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px]"
+        >
+          <option value="">Tất cả nhân viên</option>
+          {employees.map((emp) => (
+            <option key={emp.id} value={emp.id}>{emp.name}</option>
+          ))}
+        </select>
       </div>
 
       <Button type="submit" disabled={isPending}>
