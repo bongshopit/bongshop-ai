@@ -12,6 +12,7 @@ import {
   Banknote,
   UserCheck,
   Star,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ const navItems = [
   { title: "Lương", href: "/admin/payroll", icon: Banknote },
   { title: "Khách hàng", href: "/admin/customers", icon: UserCheck },
   { title: "Tích điểm", href: "/admin/loyalty", icon: Star },
+  { title: "Cài đặt", href: "/admin/settings", icon: Settings },
 ];
 
 export function Sidebar() {
