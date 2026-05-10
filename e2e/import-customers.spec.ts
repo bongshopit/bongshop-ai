@@ -426,5 +426,129 @@ test.describe("US-008: Nháº­p khÃ¡ch hÃ ng tá»« KiotViet xlsx", () => 
 
     await page.getByRole("button", { name: "Há»§y" }).click();
   });
-});
 
+  // TC-816: Dòng lỗi SĐT → nút "Vẫn thêm" hiển thị; nhấn → status chuyển force_add
+  test("TC-816: Dòng lỗi SĐT có nút Vẫn thêm; nhấn → chuyển sang force_add", async ({ page }) => {
+    const ts = Date.now().toString().slice(-8);
+
+    const file = createKiotVietXlsx([
+      ["Cá nhân", "CN", "KH001", `Valid ${ts}`, `0922${ts.slice(0,6)}`, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["Cá nhân", "CN", "KH002", `BadPhone ${ts}`, "090123456", "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+    ]);
+
+    await page.goto("/admin/customers");
+    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.locator('input[type="file"]').setInputFiles(file);
+
+    await expect(page.locator("text=/Tổng dòng.*2/")).toBeVisible({ timeout: 10000 });
+
+    const dialog = page.locator("div.fixed").filter({ hasText: "Nhập khách hàng từ KiotViet" });
+    const forceAddBtn = dialog.getByRole("button", { name: "Vẫn thêm" });
+    await expect(forceAddBtn).toBeVisible();
+
+    // Trước khi nhấn: Import 1 khách hàng
+    await expect(page.getByRole("button", { name: /Import 1 khách hàng/ })).toBeVisible();
+
+    await forceAddBtn.click();
+
+    // Sau khi nhấn: Import 2 khách hàng
+    await expect(page.getByRole("button", { name: /Import 2 khách hàng/ })).toBeVisible();
+    await expect(forceAddBtn).not.toBeVisible();
+    await expect(dialog.locator("text=Đã chọn thêm (bỏ trường lỗi)")).toBeVisible();
+
+    await page.getByRole("button", { name: "Hủy" }).click();
+  });
+
+  // TC-817: Dòng lỗi tên trống → nút "Vẫn thêm" disabled
+  test("TC-817: Dòng lỗi tên trống → nút Vẫn thêm bị disabled", async ({ page }) => {
+    const ts = Date.now().toString().slice(-8);
+
+    const file = createKiotVietXlsx([
+      ["Cá nhân", "CN", "KH001", "", `0933${ts.slice(0,6)}`, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+    ]);
+
+    await page.goto("/admin/customers");
+    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.locator('input[type="file"]').setInputFiles(file);
+
+    await expect(page.locator("text=/Tổng dòng.*1/")).toBeVisible({ timeout: 10000 });
+
+    const dialog = page.locator("div.fixed").filter({ hasText: "Nhập khách hàng từ KiotViet" });
+    await expect(dialog.getByRole("button", { name: "Vẫn thêm" })).toBeDisabled();
+
+    await page.getByRole("button", { name: "Hủy" }).click();
+  });
+
+  // TC-818: Force-add dòng SĐT sai → khách hàng được tạo không có SĐT
+  test("TC-818: Force-add dòng SĐT sai → import thành công, khách hàng không có SĐT", async ({ page }) => {
+    const ts = Date.now().toString().slice(-8);
+    const name = `ForceAdd SDT ${ts}`;
+
+    const file = createKiotVietXlsx([
+      ["Cá nhân", "CN", "KH001", name, "090123456", "Địa chỉ test", "", "", "", "", "", "", "Nam", "", "", "", "Ghi chú", 0, 5, "", 0, 0, 0, 0, 0, 1],
+    ]);
+
+    await page.goto("/admin/customers");
+    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.locator('input[type="file"]').setInputFiles(file);
+
+    await expect(page.locator("text=/Tổng dòng.*1/")).toBeVisible({ timeout: 10000 });
+
+    const dialog = page.locator("div.fixed").filter({ hasText: "Nhập khách hàng từ KiotViet" });
+    await dialog.getByRole("button", { name: "Vẫn thêm" }).click();
+    await expect(page.getByRole("button", { name: /Import 1 khách hàng/ })).toBeEnabled();
+
+    await page.getByRole("button", { name: /Import 1 khách hàng/ }).click();
+    await expect(
+      page.locator("[data-sonner-toast]", { hasText: /Đã nhập 1 khách hàng thành công/ })
+    ).toBeVisible({ timeout: 15000 });
+
+    await expect(page.locator("table tbody")).toContainText(name, { timeout: 10000 });
+  });
+
+  // TC-820: Sau force-add, summary bar hiển thị "Thêm thủ công"
+  test("TC-820: Sau force-add, summary bar hiển thị số Thêm thủ công", async ({ page }) => {
+    const ts = Date.now().toString().slice(-8);
+
+    const file = createKiotVietXlsx([
+      ["Cá nhân", "CN", "KH001", `Valid ${ts}`, `0944${ts.slice(0,6)}`, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["Cá nhân", "CN", "KH002", `BadPhone ${ts}`, "090123456", "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+    ]);
+
+    await page.goto("/admin/customers");
+    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.locator('input[type="file"]').setInputFiles(file);
+
+    await expect(page.locator("text=/Tổng dòng.*2/")).toBeVisible({ timeout: 10000 });
+
+    const dialog = page.locator("div.fixed").filter({ hasText: "Nhập khách hàng từ KiotViet" });
+    await dialog.getByRole("button", { name: "Vẫn thêm" }).click();
+
+    await expect(dialog.locator("text=/🔵 Thêm thủ công.*1/")).toBeVisible();
+
+    await page.getByRole("button", { name: "Hủy" }).click();
+  });
+
+  // TC-822: duplicate_in_file rows không có nút "Vẫn thêm"
+  test("TC-822: Dòng trùng SĐT trong file không có nút Vẫn thêm", async ({ page }) => {
+    const ts = Date.now().toString().slice(-8);
+    const dupPhone = `0955${ts.slice(0,6)}`;
+
+    const file = createKiotVietXlsx([
+      ["Cá nhân", "CN", "KH001", `First ${ts}`, dupPhone, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+      ["Cá nhân", "CN", "KH002", `Second ${ts}`, dupPhone, "", "", "", "", "", "", "", "", "", "", "", "", 0, 0, "", 0, 0, 0, 0, 0, 1],
+    ]);
+
+    await page.goto("/admin/customers");
+    await page.getByRole("button", { name: /Nhập từ KiotViet/ }).click();
+    await page.locator('input[type="file"]').setInputFiles(file);
+
+    await expect(page.locator("text=/Tổng dòng.*2/")).toBeVisible({ timeout: 10000 });
+
+    const dialog = page.locator("div.fixed").filter({ hasText: "Nhập khách hàng từ KiotViet" });
+    await expect(dialog.locator("text=Trùng SĐT trong file")).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Vẫn thêm" })).not.toBeVisible();
+
+    await page.getByRole("button", { name: "Hủy" }).click();
+  });
+});

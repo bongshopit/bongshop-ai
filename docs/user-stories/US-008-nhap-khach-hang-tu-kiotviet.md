@@ -131,6 +131,16 @@ Cột `Tổng điểm` (index 18) được import vào `loyaltyPointsDefault` (�
 - Số dòng dữ liệu tối đa: **5000 dòng** (file thực tế 2587 dòng)
 - *Impl hint:* `file.size <= 10 * 1024 * 1024`, `dataRows.length <= 5000`.
 
+### AC-8.8 — Thêm thủ công khách hàng lỗi ("vẫn thêm")
+Tại bảng "dòng cần chú ý", mỗi dòng có status `error` hiển thị nút **"Vẫn thêm"**. Người dùng nhấn để chấp nhận lỗi và đưa dòng vào danh sách import:
+1. Dòng chuyển status từ `error` → `force_add` (hiển thị màu xanh lá + icon xác nhận)
+2. Trường bị lỗi bị **loại bỏ** khi import (phone hoặc email không hợp lệ → omit, không gửi lên server)
+3. Nút "Vẫn thêm" **bị vô hiệu hóa** (disabled) nếu `Tên khách hàng` trống — tên là bắt buộc trong DB
+4. Các dòng `force_add` được tính vào tổng số import (cộng vào `validRows`)
+5. Bảng tổng kết hiển thị riêng số lượng "Thêm thủ công"
+
+- *Impl hint:* `status: "force_add"` — type mới trong `ImportRowStatus`. Khi force-add: build `parsed` object omitting invalid fields (`phone: undefined` nếu lỗi SĐT, `email: undefined` nếu lỗi email). `validRows = rows.filter(r => r.status === "valid" || r.status === "force_add")`. Lưu `loyaltyPointsDefault` trong `ImportRowResult` để dùng lại khi force-add.
+
 ---
 
 ## Business Rules
@@ -149,6 +159,10 @@ Cột `Tổng điểm` (index 18) được import vào `loyaltyPointsDefault` (�
 - **BR-812:** `Giới tính` nhận 2 giá trị: `"Nam"` hoặc `"Nữ"`. Giá trị khác (trống, null) → `gender = null`.
 - **BR-813:** Parse hoàn toàn **client-side**; chỉ gửi JSON data đã parse lên server (không upload file raw).
 - **BR-814:** `Tổng điểm` (index 18) là số nguyên ≥ 0. Giá trị âm → 0; giá trị trống/null/không phải số → 0. Không validate lỗi dòng vì điểm là thông tin phụ trợ.
+- **BR-815:** Nút "Vẫn thêm" chỉ xuất hiện trên dòng có status `error` (không áp dụng cho `duplicate_in_file`). Khi nhấn: dòng chuyển sang `force_add`, trường gây lỗi (phone hoặc email) bị omit khỏi dữ liệu gửi server, các trường còn lại giữ nguyên.
+- **BR-816:** Dòng `error` có `Tên khách hàng` trống → nút "Vẫn thêm" disabled. Tên là field bắt buộc trong DB, không thể bỏ qua.
+- **BR-817:** Dòng `force_add` được gộp vào mảng gửi server Action cùng dòng `valid`. Server Action `importCustomers` vẫn validate lại server-side; dữ liệu force-add đã được clean (không có trường lỗi) nên sẽ pass validation.
+- **BR-818:** Tổng kết (summary bar) hiển thị số lượng "Thêm thủ công" riêng biệt khi `forceAddRows.length > 0`. Nút import hiển thị tổng `valid + force_add` khách hàng.
 
 ---
 
@@ -196,6 +210,13 @@ Cột `Tổng điểm` (index 18) được import vào `loyaltyPointsDefault` (�
 | TC-813 | Import thành công → toast đúng số liệu, danh sách reload | Happy |
 | TC-814 | Giới tính "Nam"/"Nữ" lưu đúng; giá trị khác → null | Mapping |
 | TC-815 | "Tổng điểm" > 0 → lưu đúng vào loyaltyPointsDefault; trống → 0 | Mapping |
+| TC-816 | Dòng lỗi SĐT → nút "Vẫn thêm" hiển thị; nhấn → status chuyển sang `force_add`, màu xanh lá | Force-add |
+| TC-817 | Dòng lỗi tên trống → nút "Vẫn thêm" disabled | Force-add |
+| TC-818 | Force-add dòng SĐT sai → khách hàng được tạo không có SĐT (phone = null) | Force-add |
+| TC-819 | Force-add dòng email sai → khách hàng được tạo không có email (email = null) | Force-add |
+| TC-820 | Sau khi force-add, summary bar hiển thị đúng số "Thêm thủ công" | Force-add |
+| TC-821 | Nút import tính tổng `valid + force_add` | Force-add |
+| TC-822 | `duplicate_in_file` rows không có nút "Vẫn thêm" | Force-add |
 
 ---
 

@@ -10,7 +10,7 @@ import type { CustomerImportRow } from "@/lib/validators/customer";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type ImportRowStatus = "valid" | "error" | "duplicate_in_file";
+type ImportRowStatus = "valid" | "error" | "duplicate_in_file" | "force_add";
 
 interface ImportRowResult {
   rowIndex: number;
@@ -21,6 +21,7 @@ interface ImportRowResult {
   gender: string;
   email: string;
   note: string;
+  loyaltyPointsDefault: number; // lưu để dùng lại khi force-add
   status: ImportRowStatus;
   errors: string[];
   parsed?: CustomerImportRow;
@@ -124,6 +125,7 @@ function parseKiotVietRows(data: unknown[][]): ImportRowResult[] {
       gender,
       email,
       note,
+      loyaltyPointsDefault,
       status,
       errors,
       parsed,
@@ -138,6 +140,14 @@ function parseKiotVietRows(data: unknown[][]): ImportRowResult[] {
 function StatusBadge({ row }: { row: ImportRowResult }) {
   if (row.status === "valid") {
     return <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />;
+  }
+  if (row.status === "force_add") {
+    return (
+      <div className="flex items-center gap-1">
+        <CheckCircle className="h-4 w-4 text-blue-500 shrink-0" />
+        <span className="text-xs text-blue-700">Bổ sung</span>
+      </div>
+    );
   }
   if (row.status === "duplicate_in_file") {
     return (
@@ -174,10 +184,39 @@ export function CustomerImportDialog() {
   const [progress, setProgress] = useState<ImportProgress | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const validRows = rows.filter((r) => r.status === "valid");
+  const validRows = rows.filter((r) => r.status === "valid" || r.status === "force_add");
   const errorRows = rows.filter((r) => r.status === "error");
   const duplicateRows = rows.filter((r) => r.status === "duplicate_in_file");
+  const forceAddRows = rows.filter((r) => r.status === "force_add");
+  const attentionRows = rows.filter(
+    (r) => r.status === "error" || r.status === "duplicate_in_file" || r.status === "force_add"
+  );
   const previewRows = rows.slice(0, 100);
+
+  function handleForceAdd(rowIndex: number) {
+    setRows((prev) =>
+      prev.map((row) => {
+        if (row.rowIndex !== rowIndex || row.status !== "error") return row;
+        if (!row.name) return row; // tên rỗng không thể bỏ qua — DB bắt buộc
+        const hasPhoneError = row.errors.some((e) => e.includes("SĐT"));
+        const hasEmailError = row.errors.some((e) => e.includes("Email"));
+        const parsed: CustomerImportRow = {
+          name: row.name,
+          phone: hasPhoneError ? undefined : row.phone || undefined,
+          address: row.address || undefined,
+          dateOfBirth: row.dateOfBirth || undefined,
+          gender:
+            row.gender === "Nam" || row.gender === "Nữ"
+              ? row.gender
+              : undefined,
+          email: hasEmailError ? undefined : row.email || undefined,
+          note: row.note || undefined,
+          loyaltyPointsDefault: row.loyaltyPointsDefault,
+        };
+        return { ...row, status: "force_add" as ImportRowStatus, parsed };
+      })
+    );
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -324,8 +363,13 @@ export function CustomerImportDialog() {
                 Tổng dòng: <strong>{totalRows}</strong>
               </span>
               <span className="text-green-700">
-                ✅ Hợp lệ: <strong>{validRows.length}</strong>
+                ✅ Hợp lệ: <strong>{rows.filter((r) => r.status === "valid").length}</strong>
               </span>
+              {forceAddRows.length > 0 && (
+                <span className="text-blue-700">
+                  🔵 Thêm thủ công: <strong>{forceAddRows.length}</strong>
+                </span>
+              )}
               {errorRows.length > 0 && (
                 <span className="text-red-700">
                   ❌ Lỗi: <strong>{errorRows.length}</strong>
@@ -344,28 +388,40 @@ export function CustomerImportDialog() {
             </div>
           )}
 
-          {/* Error rows — show ALL regardless of position in file */}
-          {(errorRows.length > 0 || duplicateRows.length > 0) && (
+          {/* Problem rows — error, duplicate, force_add */}
+          {attentionRows.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-sm font-medium text-red-700 flex items-center gap-1.5">
+              <p className="text-sm font-medium text-orange-700 flex items-center gap-1.5">
                 <AlertCircle className="h-4 w-4 shrink-0" />
-                {errorRows.length + duplicateRows.length} dòng cần chú ý (sẽ bị bỏ qua khi import)
+                {attentionRows.length} dòng cần chú ý
+                {forceAddRows.length > 0 && (
+                  <span className="text-blue-700 font-normal ml-1">
+                    ({forceAddRows.length} sẽ được thêm thủ công)
+                  </span>
+                )}
               </p>
-              <div className="overflow-x-auto rounded-lg border border-red-200 max-h-52 overflow-y-auto">
+              <div className="overflow-x-auto rounded-lg border border-orange-200 max-h-52 overflow-y-auto">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-red-50 text-red-800 uppercase sticky top-0">
+                  <thead className="bg-orange-50 text-orange-800 uppercase sticky top-0">
                     <tr>
                       <th className="px-3 py-2 font-medium">#</th>
                       <th className="px-3 py-2 font-medium">Tên KH</th>
                       <th className="px-3 py-2 font-medium">SĐT</th>
                       <th className="px-3 py-2 font-medium">Lý do</th>
+                      <th className="px-3 py-2 font-medium">Hành động</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-red-100">
-                    {[...errorRows, ...duplicateRows].map((row) => (
+                  <tbody className="divide-y divide-orange-100">
+                    {attentionRows.map((row) => (
                       <tr
                         key={row.rowIndex}
-                        className={row.status === "error" ? "bg-red-50" : "bg-yellow-50"}
+                        className={
+                          row.status === "force_add"
+                            ? "bg-green-50"
+                            : row.status === "error"
+                            ? "bg-red-50"
+                            : "bg-yellow-50"
+                        }
                       >
                         <td className="px-3 py-1.5 text-gray-400">{row.rowIndex}</td>
                         <td className="px-3 py-1.5 font-medium text-gray-900 max-w-[160px] truncate">
@@ -373,10 +429,33 @@ export function CustomerImportDialog() {
                         </td>
                         <td className="px-3 py-1.5 text-gray-600">{row.phone || "—"}</td>
                         <td className="px-3 py-1.5">
-                          {row.status === "duplicate_in_file" ? (
+                          {row.status === "force_add" ? (
+                            <span className="text-green-700 flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Đã chọn thêm (bỏ trường lỗi)
+                            </span>
+                          ) : row.status === "duplicate_in_file" ? (
                             <span className="text-yellow-700">Trùng SĐT trong file</span>
                           ) : (
                             <span className="text-red-700">{row.errors.join(", ")}</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-1.5">
+                          {row.status === "error" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-xs px-2 border-blue-300 text-blue-700 hover:bg-blue-50"
+                              onClick={() => handleForceAdd(row.rowIndex)}
+                              disabled={!row.name}
+                              title={
+                                !row.name
+                                  ? "Không thể thêm khách hàng không có tên"
+                                  : "Thêm khách hàng này và bỏ qua trường bị lỗi"
+                              }
+                            >
+                              Vẫn thêm
+                            </Button>
                           )}
                         </td>
                       </tr>
@@ -411,6 +490,8 @@ export function CustomerImportDialog() {
                           ? "bg-red-50"
                           : row.status === "duplicate_in_file"
                           ? "bg-yellow-50"
+                          : row.status === "force_add"
+                          ? "bg-blue-50"
                           : ""
                       }
                     >
@@ -435,9 +516,14 @@ export function CustomerImportDialog() {
           )}
 
           {/* No valid rows warning */}
-          {totalRows > 0 && validRows.length === 0 && (
+          {totalRows > 0 && validRows.length === 0 && errorRows.length === 0 && (
             <p className="text-sm text-red-600 text-center py-2">
               Không có dòng nào hợp lệ để import
+            </p>
+          )}
+          {totalRows > 0 && validRows.length === 0 && errorRows.length > 0 && (
+            <p className="text-sm text-orange-600 text-center py-2">
+              Chưa có dòng nào hợp lệ. Nhấn &ldquo;Vẫn thêm&rdquo; trên các dòng lỗi chấp nhận được để thêm thủ công.
             </p>
           )}
         </div>
